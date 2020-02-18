@@ -19,7 +19,6 @@ def loadOne(filename):
     datadict = unpickle(filename)
     X = datadict[b'data']
     Y = datadict[b'labels']
-    X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float") # reshape to (10000, 32, 32, 3)
     Y = np.array(Y)
     return X, Y
 
