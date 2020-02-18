@@ -1,3 +1,7 @@
+import numpy as np
+from dataProcess import loadAll
+from configTemplate import dataDir
+
 class NearestNeighbor:
     def __init__(self):
         pass
@@ -39,8 +43,7 @@ class KNearestNeighbor:
         return Ypred
 
 if __name__ == "__main__":
-    x_train, y_train = loadData(trainDataDir)
-    x_test, y_test = loadData(testDataDir)
+    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(dataDir)
     #1w数据集 1k测试集
     x_test = x_test[:1000]
     y_test = y_test[:1000]
