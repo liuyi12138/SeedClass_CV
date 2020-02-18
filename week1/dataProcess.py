@@ -25,7 +25,7 @@ def loadOne(filename):
 def loadAll(path):
     prefix = 'data_batch_'
     valid_idx = 5
-    for surfix in range(1, ):
+    for surfix in range(1, 6):
         if surfix == 1:
             x_train, y_train = loadOne(path + '/' + prefix + str(surfix))
         elif surfix == valid_idx:
