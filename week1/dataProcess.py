@@ -45,13 +45,13 @@ def loadData(filename):
     labels = np.array(dataDict[b'labels'])
     return data, labels
 
-def plotSample():
+def plotSample(data, labels):
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 10
     plt.figure(figsize=(12,12))
-    figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
+    figureData = data.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
     for label,classname in enumerate(classes):    #label返回元素位置，classname返回分类名称
-        indexArray = np.where(y == label)[0]
+        indexArray = np.where(labels == label)[0]
         for i in range(sampleNum):    #选取前sampleNum张图片
             pltIndex = i * len(classes) + label + 1  #计算图片位置
             plt.subplot(sampleNum,len(classes),pltIndex) #选择图片位置
@@ -64,4 +64,4 @@ if __name__ == "__main__":
     x, y = loadData(dataDir)
     print(x.shape)
     print(y.shape)
-    plotSample()
+    plotSample(x,y)
