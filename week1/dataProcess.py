@@ -1,5 +1,12 @@
+#!/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
+if not os.path.exists("config.py"):   
+    print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
+    exit(0)
+from config import dataDir
 
 def unpickle(file):
     import pickle
@@ -53,9 +60,8 @@ def plotSample():
             if i == 0:
                 plt.title(classname)
 
-if __name__ == '__main__':
-    x, y = loadData("D:\HUST\寒假课程资料\数字图像处理\课设\week1\cifar-10-batches-py\data_batch_1")
+if __name__ == "__main__":
+    x, y = loadData(dataDir)
     print(x.shape)
     print(y.shape)
     plotSample()
-
