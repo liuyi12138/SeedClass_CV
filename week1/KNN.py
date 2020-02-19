@@ -48,7 +48,9 @@ class KNearestNeighbor:
             k = 10
         if m == None:
             m = 1
-        print('Start to predict')
+        self.value_k = k
+        self.value_m = m
+        #print('Start to predict')
         num_test = x.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
         for i in range(num_test):
@@ -58,23 +60,24 @@ class KNearestNeighbor:
             closestK = self.ytr[indexs[:k]] #取距离最小的K个点
             count = np.bincount(closestK) #获取各类的得票数
             Ypred[i] = np.argmax(count) #找出得票数最多的一个
-            if (i+1) % 2 == 0:
-                print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
+            #if (i+1) % 100 == 0:
+            #    print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
         return Ypred
     
     def evaluate(self, Ypred, y):
         num_test = len(y)
         num_correct = np.sum(Ypred == y)
         accuracy = float(num_correct) / num_test
-        print('%d / %d correct => accuracy: %.3f' %(num_correct, num_test, accuracy*100)) 
+        print('With k = %d, m = %d, %d / %d correct => accuracy: %.3f' %(self.value_k, self.value_m, num_correct, num_test, accuracy*100)) 
+        return accuracy
 
 if __name__ == "__main__":
-    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(dataDir)
+    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(dataDir, 1)
     #1w数据集 1k测试集
     x_test = x_test[:1000]
     y_test = y_test[:1000]
     #5-NN
     classifier = KNearestNeighbor()
     classifier.train(x_train,y_train)
-    result = classifier.predict(x_test,5,1)
+    result = classifier.predict(x_test,5,2)
     classifier.evaluate(result, y_test)
