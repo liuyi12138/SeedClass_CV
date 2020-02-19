@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from sklearn.decomposition import PCA
 
 if not os.path.exists("config.py"):   
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
@@ -44,6 +45,20 @@ def loadData(filename):
     data = dataDict[ b'data']
     labels = np.array(dataDict[b'labels'])
     return data, labels
+
+def sample(data):
+    length = data.shape[0]
+    data = data.reshape(length, 3, 32, 32)
+    dataSample = data[:,:,::2,::2]
+    dataSample = np.reshape(dataSample,(dataSample.shape[0],-1))
+    return dataSample
+
+def pca(x_train, x_test):
+    pca=PCA(n_components=100)
+    pca.fit(x_train)
+    x_train_new = pca.transform(x_train)
+    x_test_new = pca.transform(x_test)  
+    return x_train_new,x_test_new
 
 def plotSample(data, labels):
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
