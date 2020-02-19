@@ -1,7 +1,7 @@
 import numpy as np
-from dataProcess import loadAll
-from configTemplate import dataDir
+from dataProcess import loadData, testDataDir, trainDataDir
 from math import pow
+from scipy.spatial.distance import cosine
 
 def LmNorm(x1,x2,m):
     # x1 should be the xtr matrix, ndarray
@@ -16,7 +16,7 @@ def LmNorm(x1,x2,m):
     #print(dis)
     return np.array(dis)
 
-def cosDis(x1,x2):
+def cosDis(x1, x2):
     # x1 should be the xtr matrix, ndarray
     # x2 should be a row of the xpred matrix, list
     # return: dis should also be a ndarray

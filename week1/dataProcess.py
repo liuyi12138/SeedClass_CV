@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 if not os.path.exists("config.py"):   
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
     exit(0)
-from config import dataDir
+from config import dataDir, testDataDir, trainDataDir
 
 def unpickle(file):
     import pickle
