@@ -1,6 +1,20 @@
 import numpy as np
 from dataProcess import loadAll
 from configTemplate import dataDir
+from math import pow
+
+def LpNorm(x1,x2,p):
+    # x1 should be the xtr matrix, ndarray
+    # x2 should be a row of the xpred matrix, list
+    # return: dis should also be a ndarray
+    dis = []
+    for i in range(x1.shape[0]):
+        abs_list = np.abs(x1[i] - x2)
+        psum = np.sum(abs_list**p)          # pow p and sum
+        # print(pow(psum, 1/p))
+        dis.append(pow(psum, 1/p))          # pow 1/p
+    #print(dis)
+    return np.array(dis)
 
 class NearestNeighbor:
     def __init__(self):
@@ -17,8 +31,8 @@ class NearestNeighbor:
             distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
             min_index = np.argmin(distances)
             Ypred[i] = self.ytr[min_index]
-            if i % 50 == 0:
-                print('now: %d/%d' % (i, num_test))
+            if (i+1) % 10 == 0:
+                print('now: %d/%d' % (i+1, num_test))
         return Ypred
 
 class KNearestNeighbor:
@@ -30,16 +44,18 @@ class KNearestNeighbor:
         self.ytr = y
         
     def predict(self,x,k):
+        print('Start to predict')
         num_test = x.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
         for i in range(num_test):
-            distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
+            distances = LpNorm(self.xtr, x[i], 1)
+            #distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
             indexs = np.argsort(distances) #对index排序
             closestK = self.ytr[indexs[:k]] #取距离最小的K个点
             count = np.bincount(closestK) #获取各类的得票数
             Ypred[i] = np.argmax(count) #找出得票数最多的一个
-#             if i % 50 == 0:
-#                 print('now: %d/%d' % (i, num_test))
+            if (i+1) % 2 == 0:
+                print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
         return Ypred
 
 if __name__ == "__main__":
