@@ -16,9 +16,13 @@ def loadOne(filename):
     Y = np.array(Y)
     return X, Y
 
-def loadAll(path):
+def loadAll(path, valid_idx = None):
     prefix = 'data_batch_'
-    valid_idx = 5
+    if valid_idx == None:
+        valid_idx = 0
+        x_valid = np.array([])
+        y_valid = np.array([])
+
     for surfix in range(1, 6):
         if surfix == 1:
             x_train, y_train = loadOne(path + '/' + prefix + str(surfix))
