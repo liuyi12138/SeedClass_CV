@@ -20,22 +20,21 @@ def loadOne(filename):
     datadict = unpickle(filename)
     X = datadict[b'data']
     Y = datadict[b'labels']
-    X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float") # reshape to (10000, 32, 32, 3)
     Y = np.array(Y)
     return X, Y
 
 def loadAll(path):
     prefix = 'data_batch_'
     valid_idx = 5
-    for surfix in range(1, 7):
+    for surfix in range(1, 6):
         if surfix == 1:
             x_train, y_train = loadOne(path + '/' + prefix + str(surfix))
         elif surfix == valid_idx:
             x_valid, y_valid = loadOne(path + '/' + prefix + str(surfix))
         else:
             X, Y = loadOne(path + '/' + prefix + str(surfix))
-            x_all = np.concatenate((x_all, X), axis = 0)
-            y_all = np.concatenate((y_all, Y), axis = 0)
+            x_train = np.concatenate((x_train, X), axis = 0)
+            y_train = np.concatenate((y_train, Y), axis = 0)
     del X, Y
     x_test, y_test = loadOne(path + '/test_batch')
     return x_train, y_train, x_valid, y_valid, x_test, y_test
