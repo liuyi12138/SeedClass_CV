@@ -16,6 +16,15 @@ def LmNorm(x1,x2,m):
     #print(dis)
     return np.array(dis)
 
+def cosDis(x1,x2):
+    # x1 should be the xtr matrix, ndarray
+    # x2 should be a row of the xpred matrix, list
+    # return: dis should also be a ndarray
+    dis = []
+    for i in range(x1.shape[0]):
+        dis.append(cosine(x1[i], x2))
+    return np.array(dis)
+
 class NearestNeighbor:
     def __init__(self):
         pass
@@ -54,7 +63,8 @@ class KNearestNeighbor:
         num_test = x.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
         for i in range(num_test):
-            distances = LmNorm(self.xtr, x[i], m)
+            distances = cosDis(self.xtr, x[i])
+            #distances = LmNorm(self.xtr, x[i], m)
             #distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
             indexs = np.argsort(distances) #对index排序
             closestK = self.ytr[indexs[:k]] #取距离最小的K个点
