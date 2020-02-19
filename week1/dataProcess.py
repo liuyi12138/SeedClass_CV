@@ -23,14 +23,17 @@ def loadOne(filename):
     Y = np.array(Y)
     return X, Y
 
-def loadAll(path):
+def loadAll(path, valid_idx = None):
     prefix = 'data_batch_'
-    valid_idx = 5
+    if valid_idx == None:
+        valid_idx = 0
+    cnt = 0
     for surfix in range(1, 6):
-        if surfix == 1:
-            x_train, y_train = loadOne(path + '/' + prefix + str(surfix))
-        elif surfix == valid_idx:
+        if surfix == valid_idx:
             x_valid, y_valid = loadOne(path + '/' + prefix + str(surfix))
+        elif cnt == 0:
+            x_train, y_train = loadOne(path + '/' + prefix + str(surfix))
+            cnt = 1
         else:
             X, Y = loadOne(path + '/' + prefix + str(surfix))
             x_train = np.concatenate((x_train, X), axis = 0)
