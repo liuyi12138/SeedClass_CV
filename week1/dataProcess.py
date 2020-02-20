@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from sklearn.decomposition import PCA
+from skimage.feature import hog
 
 if not os.path.exists("config.py"):   
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
@@ -48,6 +49,7 @@ def loadData(filename):
     labels = np.array(dataDict[b'labels'])
     return data, labels
 
+#采样函数
 def sample(data):
     length = data.shape[0]
     data = data.reshape(length, 3, 32, 32)
@@ -76,6 +78,57 @@ def plotSample(data, labels):
             plt.axis('off')  #隐藏坐标轴
             if i == 0:
                 plt.title(classname)
+
+def pca(x_train, x_test,f): 
+    if os.path.exists('pca\\' + str(f) + '.npy') == True:
+        x_train_new = np.load('pca\\' + str(f) + '.npy')
+        x_test_new = np.load('pca\\test.npy')
+    else:
+        pca=PCA(n_components=100)
+        pca.fit(x_train)
+        x_train_new = pca.transform(x_train)
+        x_test_new = pca.transform(x_test)  
+        np.save(('pca\\' + str(f) + '.npy'), x_train_new)
+        np.save('pca\\test.npy', x_test_new)
+    return x_train_new,x_test_new
+
+
+#Hog处理 注意更换一下地址
+def Hog(x_train, x_test, f):
+    if os.path.exists('hog\\' + str(f) + '.npy') == True:
+        x_train_new = np.load('hog\\' + str(f) + '.npy')
+        x_test_new = np.load('hog\\test.npy')
+    else:
+        figureData_train = x_train.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
+        x_train_new = []
+        for i in range(len(x_train)):
+            x_train_new.append(hog(figureData_train[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
+        x_train_new = np.array(x_train_new)
+        np.save('hog\\' + str(f) + '.npy', x_train_new)
+        
+        figureData_test = x_test.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
+        x_test_new = []
+        for i in range(len(x_test)):
+            x_test_new.append(hog(figureData_test[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
+        x_test_new = np.array(x_test_new)
+        np.save('hog\\test.npy', x_test_new)
+    return x_train_new,x_test_new
+
+#绘制曲线图
+def plotK(dataK):
+    data = []
+    for i in range(len(dataK)):
+        data.append(float(format(dataK[i],'.3f')))
+    x = range(1,len(data) + 1)
+    max_indx = np.argmax(data)
+    show_max='['+str(max_indx+1)+' '+str(data[max_indx])+']'
+    plt.plot(x, dataK, color='red', label='Hog&L1')
+    plt.legend() # 显示图例
+    plt.xlabel('K')
+    plt.ylabel('accurity')
+    plt.annotate(show_max,xytext=(max_indx,data[max_indx]),xy=(max_indx,data[max_indx]))
+    plt.show()
+
 
 if __name__ == "__main__":
     x, y = loadData(dataDir)
