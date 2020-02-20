@@ -1,8 +1,6 @@
-import numpy as np
 import random
 from KNN import KNearestNeighbor
-from dataProcess import loadAll
-from configTemplate import dataDir
+from dataProcess import loadAll, dataDir
 
 def findBestK():
     # k_list = [1, 2, 5, 10, 15, 30, 50, 100]
@@ -15,8 +13,7 @@ def findBestK():
     ytr = y_train[rd_start:rd_start + 10000]
     xva = x_valid[:2000]
     yva = y_valid[:2000]
-    
-    
+
     # acc lists for plot
     m1_acc = [0]
     m2_acc = [0]
@@ -27,7 +24,6 @@ def findBestK():
         m1_acc.append(classifier.evaluate(Ypred_1, yva))
         Ypred_2 = classifier.predict(xva, k, m = 2)
         m2_acc.append(classifier.evaluate(Ypred_2, yva))
-
     # plotAcc()
 
 if __name__ == '__main__':

@@ -46,7 +46,7 @@ class NearestNeighbor:
 
 class KNearestNeighbor:
     def __init__(self):
-        pass
+        return None
     
     def train(self, x, y):
         self.xtr = x

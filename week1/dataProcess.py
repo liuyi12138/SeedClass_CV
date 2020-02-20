@@ -1,6 +1,7 @@
 #!/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+
 import os
 from sklearn.decomposition import PCA
 from skimage.feature import hog
@@ -78,6 +79,7 @@ def plotSample(data, labels):
             plt.axis('off')  #隐藏坐标轴
             if i == 0:
                 plt.title(classname)
+    plt.show()
 
 def pca(x_train, x_test,f): 
     if os.path.exists('pca\\' + str(f) + '.npy') == True:
@@ -91,7 +93,6 @@ def pca(x_train, x_test,f):
         np.save(('pca\\' + str(f) + '.npy'), x_train_new)
         np.save('pca\\test.npy', x_test_new)
     return x_train_new,x_test_new
-
 
 #Hog处理 注意更换一下地址
 def Hog(x_train, x_test, f):
@@ -128,7 +129,6 @@ def plotK(dataK):
     plt.ylabel('accurity')
     plt.annotate(show_max,xytext=(max_indx,data[max_indx]),xy=(max_indx,data[max_indx]))
     plt.show()
-
 
 if __name__ == "__main__":
     x, y = loadData(dataDir)
