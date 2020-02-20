@@ -21,6 +21,8 @@ def loadAll(path, valid_idx = None):
     if valid_idx == None:
         valid_idx = 0
     cnt = 0
+    x_valid = np.array([])
+    y_valid = np.array([])
     for surfix in range(1, 6):
         if surfix == valid_idx:
             x_valid, y_valid = loadOne(path + '/' + prefix + str(surfix))
