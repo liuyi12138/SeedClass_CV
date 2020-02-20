@@ -79,20 +79,25 @@ def getDistances(x1, x2, valid_idx = None, weights = None, use_test = None):
         cos_distances = []
         l1_distances = []
         l2_distances = []
-        for i in range(num_test):    
+        for i in range(num_test):
+            print('%d of %d finished' %(i, num_test))
             cos_distances.append(cosDis(x1, x2[i]))
-            l1_distances.append(LmNorm(x1, x2, 1))
-            l2_distances.append(LmNorm(x1, x2, 2))
+            l1_distances.append(LmNorm(x1, x2[i], 1))
+            l2_distances.append(LmNorm(x1, x2[i], 2))
         np.save(cos_dis_name, np.array(cos_distances))
+        print('cosine finished')
         np.save(l1_dis_name, np.array(l1_distances))
+        print('L1 finished')
         np.save(l2_dis_name, np.array(l2_distances))
-        print('Finish saving npy data for cosine, L1 and L2\n!')
+        print('L2 finished')
+        print('Finish all for npy data\n!')
 
     # get total distances
+    print('Start total distances')
     for i in range(num_test):
         distances_matrix.append(weights[0]*cos_distances[i] + weights[1]*l1_distances[i] + weights[2]*l2_distances[i])
     np.save(total_dis_name, np.array(distances_matrix))
-
+    print('Finish total distances')
     return np.array(distances_matrix)
 
 class KNearestNeighbor:
