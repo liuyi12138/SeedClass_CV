@@ -32,7 +32,12 @@ def getDistances(x1, x2, valid_idx = None, weights = None, use_test = None):
     # weights should be a list, indicating the weights distribution of cosine, L1 and L2 distance
     # distances between 4w train and 1w valid
     
-    dir_name = './Distance'
+    dir_name = './Distances'
+    total_dis_name = dir_name + '/distances.npy'
+    weights_filename = dir_name + '/weights.npy'
+    distances_matrix = []
+    num_test = x2.shape[0]
+
     if use_test == None:
         cos_dis_name = dir_name + '/cos_dis_valid' + str(valid_idx) + '.npy'
         l1_dis_name = dir_name + '/l1_dis_valid' + str(valid_idx) + '.npy'
@@ -41,33 +46,54 @@ def getDistances(x1, x2, valid_idx = None, weights = None, use_test = None):
         cos_dis_name = dir_name + '/cos_dis_alldata.npy'
         l1_dis_name = dir_name + '/l1_dis_alldata.npy'
         l2_dis_name = dir_name + '/l2_dis_alldata.npy'
-    
+
+
     # verify dir
     if not os.path.exists(dir_name):
-        os.makedirs(dir_name)   
+        print("'./Distances' doesn't exist, create one")
+        os.makedirs(dir_name)
+    else:
+        print("'./Distances' detected, go on")
+
+    if os.path.exists(weights_filename):
+        last_weights = np.load(weights_filename)
+        if last_weights == np.array(weights):
+            return np.load(total_dis_name)
+        else:
+            print('weights matrix has been changed, recalculate total distances')
+    else:
+        print("weights npy file doesn't exist, create one")
+    np.save(weights_filename, np.array(weights))
+
     
-    # get cos
-    if os.path.exists(cos_dis_name):
+    # get cos, L1 and L2
+    if os.path.exists(cos_dis_name) and os.path.exists(l1_dis_name) and os.path.exists(l2_dis_name):
+        print('%s detected, load npy data' %cos_dis_name)
+        print('%s detected, load npy data' %l1_dis_name)
+        print('%s detected, load npy data' %l2_dis_name)
         cos_distances = np.load(cos_dis_name)
-    else:
-        cos_distances = cosDis(x1, x2)
-        np.save(cos_dis_name, cos_distances)
-
-    # get l1
-    if os.path.exists(l1_dis_name):
         l1_distances = np.load(l1_dis_name)
-    else:
-        l1_distances = LmNorm(x1, x2, 1)
-        np.save(l1_dis_name, l1_distances)
-
-    # get l2
-    if os.path.exists(l2_dis_name):
         l2_distances = np.load(l2_dis_name)
     else:
-        l2_distances = LmNorm(x1, x2, 2)
-        np.save(l2_dis_name, l2_distances)
+        print('Start to create npy files for cosine, L1 and L2')
+        cos_distances = []
+        l1_distances = []
+        l2_distances = []
+        for i in range(num_test):    
+            cos_distances.append(cosDis(x1, x2[i]))
+            l1_distances.append(LmNorm(x1, x2, 1))
+            l2_distances.append(LmNorm(x1, x2, 2))
+        np.save(cos_dis_name, np.array(cos_distances))
+        np.save(l1_dis_name, np.array(l1_distances))
+        np.save(l2_dis_name, np.array(l2_distances))
+        print('Finish saving npy data for cosine, L1 and L2\n!')
 
-    return weights[0] * cos_distances + weights[1] * l1_distances + weights[2] * l2_distances    
+    # get total distances
+    for i in range(num_test):
+        distances_matrix.append(weights[0]*cos_distances[i] + weights[1]*l1_distances[i] + weights[2]*l2_distances[i])
+    np.save(total_dis_name, np.array(distances_matrix))
+
+    return np.array(distances_matrix)
 
 class KNearestNeighbor:
     def __init__(self):
@@ -87,19 +113,19 @@ class KNearestNeighbor:
         else:
             self.valid_idx = valid_idx
         
-        self.dis_weights = [0.6, 0.3, 0.1]
-        print('Start to predict')
+        print('\nStart to process\n')
         num_test = x.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
 
+        self.dis_weights = [0, 0, 1]
+        distances_matrix = getDistances(self.xtr, x, valid_idx = valid_idx, weights = self.dis_weights, use_test = None)
         for i in range(num_test):
-            distances = getDistances(self.xtr, x[i], valid_idx = valid_idx, weights = self.dis_weights, use_test = None)
-            #distances_cos = cosDis(self.xtr, x[i])
-            #distances = LmNorm(self.xtr, x[i], m)
+            #distances = cosDis(self.xtr, x[i])
+            #distances = LmNorm(self.xtr, x[i], 2)
             #distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
-            indexs = np.argsort(distances) #对index排序
-            print('indexs is ', indexs)
-            closestK = self.ytr[indexs[:k]] #取距离最小的K个点
+            print(distances_matrix[i])
+            indexs = np.argsort(distances_matrix[i]) #对index排序
+            closestK = self.ytr[indexs[:k]] #取距离最小的K个点的标签值
             print('closestK is ', closestK, '\n')
             count = np.bincount(closestK) #获取各类的得票数
             Ypred[i] = np.argmax(count) #找出得票数最多的一个
@@ -111,7 +137,7 @@ class KNearestNeighbor:
         num_test = len(y)
         num_correct = np.sum(Ypred == y)
         accuracy = float(num_correct) / num_test
-        print("[cos,l1,l2] = ", self.dis_weights, "With k = %d, %d / %d correct => accuracy: %.2f %%" %(self.value_k, num_correct, num_test, accuracy*100)) 
+        print("[cos, l1, l2] = ", self.dis_weights, "With k = %d, %d / %d correct => accuracy: %.2f %%" %(self.value_k, num_correct, num_test, accuracy*100)) 
         return accuracy
 
 if __name__ == "__main__":
