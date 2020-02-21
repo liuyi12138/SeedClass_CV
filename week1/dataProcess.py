@@ -9,7 +9,7 @@ from skimage.feature import hog
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 try:
-    from config import dataDir, batchBasePath
+    from config import dataDir, batchBasePath, projectPath
 except:
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
     exit(0)
@@ -88,37 +88,39 @@ def pca(x_train, x_test, f):
     """
     x_train:
     """
-    if os.path.exists('pca/' + str(f) + '.npy') == True:
-        x_train_new = np.load('pca/' + str(f) + '.npy')
-        x_test_new = np.load('pca/test.npy')
+    pca_path = projectPath + "/pca/"
+    if os.path.exists(pca_path + str(f) + '.npy') == True:
+        x_train_new = np.load(pca_path + str(f) + '.npy')
+        x_test_new = np.load(pca_path + 'test.npy')
     else:
         pca = PCA(n_components=100)
         pca.fit(x_train)
         x_train_new = pca.transform(x_train)
         x_test_new = pca.transform(x_test)  
-        np.save(('pca/' + str(f) + '.npy'), x_train_new)
-        np.save('pca/test.npy', x_test_new)
+        np.save((pca_path + str(f) + '.npy'), x_train_new)
+        np.save(pca_path + 'test.npy', x_test_new)
     return x_train_new,x_test_new
 
 #Hog处理 注意更换一下地址
 def Hog(x_train, x_test, f):
-    if os.path.exists('hog/' + str(f) + '.npy') == True:
-        x_train_new = np.load('hog/' + str(f) + '.npy')
-        x_test_new = np.load('hog/test.npy')
+    hog_path = projectPath + "/hog/"
+    if os.path.exists(hog_path + str(f) + '.npy') == True:
+        x_train_new = np.load(hog_path  + str(f) + '.npy')
+        x_test_new = np.load(hog_path + 'test.npy')
     else:
         figureData_train = x_train.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
         x_train_new = []
         for i in range(len(x_train)):
             x_train_new.append(hog(figureData_train[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
         x_train_new = np.array(x_train_new)
-        np.save('hog/' + str(f) + '.npy', x_train_new)
+        np.save(hog_path + str(f) + '.npy', x_train_new)
         
         figureData_test = x_test.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
         x_test_new = []
         for i in range(len(x_test)):
             x_test_new.append(hog(figureData_test[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
         x_test_new = np.array(x_test_new)
-        np.save('hog/test.npy', x_test_new)
+        np.save(hog_path + 'test.npy', x_test_new)
     return x_train_new,x_test_new
 
 #绘制曲线图
@@ -156,8 +158,10 @@ def getValid():
 
     x_test = np.array(x_test)
     y_test = np.array(y_test)
-    np.save('valid/x.npy', x_test)
-    np.save('valid/y.npy', y_test)
+
+    valid_path = projectPath + '/valid/'
+    np.save(valid_path + 'x.npy', x_test)
+    np.save(valid_path + 'y.npy', y_test)
 
 if __name__ == "__main__":
     x, y = loadData(dataDir)
