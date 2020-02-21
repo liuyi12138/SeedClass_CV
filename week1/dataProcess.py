@@ -130,6 +130,29 @@ def plotK(dataK):
     plt.annotate(show_max,xytext=(max_indx,data[max_indx]),xy=(max_indx,data[max_indx]))
     plt.show()
 
+
+def getValid():
+    x, y = loadData("D:\HUST\寒假课程资料\数字图像处理\课设\week1\cifar-10-batches-py\data_batch_5")
+    classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    sampleNum = 100
+    figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
+    x_test = []
+    y_test = []
+    for label,classname in enumerate(classes):    #label返回元素位置，classname返回分类名称
+        x_class = []
+        y_class = []
+        indexArray = np.where(y == label)[0]
+        for i in range(sampleNum):    #选取前sampleNum张图片
+            x_class.append(x[indexArray[i]])
+            y_class.append(y[indexArray[i]])
+        x_test.append(x_class)
+        y_test.append(y_class)
+
+    x_test = np.array(x_test)
+    y_test = np.array(y_test)
+    np.save('valid\\x.npy', x_test)
+    np.save('valid\\y.npy', y_test)
+
 if __name__ == "__main__":
     x, y = loadData(dataDir)
     print(x.shape)
