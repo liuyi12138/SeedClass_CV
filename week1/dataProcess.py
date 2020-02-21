@@ -61,13 +61,6 @@ def sample(data):
     dataSample = np.reshape(dataSample,(dataSample.shape[0],-1))
     return dataSample
 
-def pca(x_train, x_test):
-    pca=PCA(n_components=100)
-    pca.fit(x_train)
-    x_train_new = pca.transform(x_train)
-    x_test_new = pca.transform(x_test)  
-    return x_train_new,x_test_new
-
 def plotSample(data, labels):
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 10
@@ -84,7 +77,7 @@ def plotSample(data, labels):
                 plt.title(classname)
     plt.show()
 
-def pca(x_train, x_test, f):
+def pca(x_train, x_test, f=100):
     """
     x_train:
     """
