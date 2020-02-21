@@ -9,7 +9,7 @@ from skimage.feature import hog
 if not os.path.exists("config.py"):   
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
     exit(0)
-from config import dataDir, testDataDir, trainDataDir
+from config import dataDir, batchBasePath
 
 def unpickle(file):
     import pickle
@@ -135,7 +135,7 @@ def plotK(dataK):
 
 
 def getValid():
-    x, y = loadData("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_5")
+    x, y = loadData(batchBasePath + "5")
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 100
     figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
