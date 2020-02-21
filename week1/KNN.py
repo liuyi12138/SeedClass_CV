@@ -37,7 +37,7 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
     
     dir_list = ['./Dis-Raw', './Dis-SampleGrey', './Dis-PCA', './Dis-HOG', './Dis-GreyHOG']
     dir_name = dir_list[data_type-1]
-    total_dis = '/distances.npy'        # total_dis = weights_matrix x distances_matrix
+    total_dis = '/distances_' + str(value) + '.npy'        # total_dis = weights_matrix x distances_matrix
     [cos_dis, l1_dis, l2_dis] = ['/cos_dis_' + str(value) + '.npy', '/l1_dis_' + str(value) + '.npy', '/l2_dis_' + str(value) + '.npy']
     weights_file = '/weights.npy'
     
