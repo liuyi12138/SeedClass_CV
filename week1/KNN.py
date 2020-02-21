@@ -33,9 +33,9 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
     #   @x1, x2:        numpy 2D-matrixs, x1 is train, x2 is valid
     #   @valid_idx:     valid index from 1-5
     #   @weights:       A list indicating the weights distribution of cosine, L1 and L2 distance
-    #   @data_type:     1-5, 1 for raw, 2 for Sample Grey, 3 for PCA, 4 for HOG, 5 for GreyHOG
+    #   @data_type:     1-5, 1 for raw, 2 for Sample Gray, 3 for PCA, 4 for HOG, 5 for GrayHOG
     
-    dir_list = ['./Dis-Raw', './Dis-SampleGrey', './Dis-PCA', './Dis-HOG', './Dis-GreyHOG']
+    dir_list = ['./Dis-Raw', './Dis-SampleGray', './Dis-PCA', './Dis-HOG', './Dis-GrayHOG']
     dir_name = dir_list[data_type-1]
     total_dis = '/distances_' + str(value) + '.npy'        # total_dis = weights_matrix x distances_matrix
     [cos_dis, l1_dis, l2_dis] = ['/cos_dis_' + str(value) + '.npy', '/l1_dis_' + str(value) + '.npy', '/l2_dis_' + str(value) + '.npy']
@@ -104,7 +104,7 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
 
 class Optimizer:
     def __init__(self):
-        self.dict = {'Raw': 1, 'SampleGrey': 2, 'PCA': 3, 'HOG': 4, 'GreyHOG': 5}
+        self.dict = {'Raw': 1, 'SampleGray': 2, 'PCA': 3, 'HOG': 4, 'GrayHOG': 5}
         self.weights = [1, 0, 0]
 
     def generate(self, opt_type = None, opt_value = None):
