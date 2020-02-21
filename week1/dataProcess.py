@@ -3,13 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import os
+import sys
 from sklearn.decomposition import PCA
 from skimage.feature import hog
 
-if not os.path.exists("config.py"):   
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+try:
+    from config import dataDir, batchBasePath
+except:
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
     exit(0)
-from config import dataDir, batchBasePath
 
 def unpickle(file):
     import pickle
