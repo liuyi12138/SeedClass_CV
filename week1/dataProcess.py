@@ -81,38 +81,41 @@ def plotSample(data, labels):
                 plt.title(classname)
     plt.show()
 
-def pca(x_train, x_test,f): 
-    if os.path.exists('pca\\' + str(f) + '.npy') == True:
-        x_train_new = np.load('pca\\' + str(f) + '.npy')
-        x_test_new = np.load('pca\\test.npy')
+def pca(x_train, x_test, f):
+    """
+    x_train:
+    """
+    if os.path.exists('pca/' + str(f) + '.npy') == True:
+        x_train_new = np.load('pca/' + str(f) + '.npy')
+        x_test_new = np.load('pca/test.npy')
     else:
-        pca=PCA(n_components=100)
+        pca = PCA(n_components=100)
         pca.fit(x_train)
         x_train_new = pca.transform(x_train)
         x_test_new = pca.transform(x_test)  
-        np.save(('pca\\' + str(f) + '.npy'), x_train_new)
-        np.save('pca\\test.npy', x_test_new)
+        np.save(('pca/' + str(f) + '.npy'), x_train_new)
+        np.save('pca/test.npy', x_test_new)
     return x_train_new,x_test_new
 
 #Hog处理 注意更换一下地址
 def Hog(x_train, x_test, f):
-    if os.path.exists('hog\\' + str(f) + '.npy') == True:
-        x_train_new = np.load('hog\\' + str(f) + '.npy')
-        x_test_new = np.load('hog\\test.npy')
+    if os.path.exists('hog/' + str(f) + '.npy') == True:
+        x_train_new = np.load('hog/' + str(f) + '.npy')
+        x_test_new = np.load('hog/test.npy')
     else:
         figureData_train = x_train.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
         x_train_new = []
         for i in range(len(x_train)):
             x_train_new.append(hog(figureData_train[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
         x_train_new = np.array(x_train_new)
-        np.save('hog\\' + str(f) + '.npy', x_train_new)
+        np.save('hog/' + str(f) + '.npy', x_train_new)
         
         figureData_test = x_test.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
         x_test_new = []
         for i in range(len(x_test)):
             x_test_new.append(hog(figureData_test[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1), visualise=False))
         x_test_new = np.array(x_test_new)
-        np.save('hog\\test.npy', x_test_new)
+        np.save('hog/test.npy', x_test_new)
     return x_train_new,x_test_new
 
 #绘制曲线图
@@ -132,7 +135,7 @@ def plotK(dataK):
 
 
 def getValid():
-    x, y = loadData("D:\HUST\寒假课程资料\数字图像处理\课设\week1\cifar-10-batches-py\data_batch_5")
+    x, y = loadData("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_5")
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 100
     figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
@@ -150,8 +153,8 @@ def getValid():
 
     x_test = np.array(x_test)
     y_test = np.array(y_test)
-    np.save('valid\\x.npy', x_test)
-    np.save('valid\\y.npy', y_test)
+    np.save('valid/x.npy', x_test)
+    np.save('valid/y.npy', y_test)
 
 if __name__ == "__main__":
     x, y = loadData(dataDir)
