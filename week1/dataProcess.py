@@ -112,6 +112,48 @@ def Hog(x_train, x_test, f):
         np.save(hog_path + 'test.npy', x_test_new)
     return x_train_new,x_test_new
 
+#转灰度图
+def ToGray(data):
+    data_new = []
+    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    for i in range(len(figureData)):
+        img_gray = color.rgb2gray(figureData[i])
+        image = filters.roberts(img_gray)
+        image = image.reshape(1024)
+        data_new.append(image)
+    data_new = np.array(data_new)
+    return data_new
+
+#LBP局部特征提取
+def LBP(data):
+    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    data_lbp = []
+    for i in range(len(data)):
+        img_gray = color.rgb2gray(figureData[i])
+        image_lbp = local_binary_pattern(img_gray, 8,1)
+        image_lbp = image_lbp.reshape(1024)
+        data_lbp.append(image_lbp)
+    data_lbp = np.array(data_lbp)
+    return data_lbp
+
+#获取镜像数据
+def getMirror(data,label):
+    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    data_new = []
+    label_new = []
+    for i in range(len(data)):
+        image = figureData[i]
+        image_mirror = image[:,::-1]
+        image = image.reshape(3*32*32)
+        image_mirror = image_mirror.reshape(3*32*32)
+        data_new.append(image)
+        data_new.append(image_mirror)
+        label_new.append(label[i])
+        label_new.append(label[i])
+    data_new = np.array(data_new)
+    label_new = np.array(label_new)
+    return data_new,label_new
+
 #绘制曲线图
 def plotK(dataK):
     data = []

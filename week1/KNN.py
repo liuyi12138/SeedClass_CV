@@ -174,6 +174,43 @@ class KNearestNeighbor:
             # if (i+1) % 10 == 0:
             #    print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
         return Ypred
+
+
+    #此处lm整理一下？
+    def predict_2Class(self,test_data,k,m,f):
+        num_test = test_data.shape[0]
+        Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
+        distances = self.getDistance(m,test_data,f)
+        
+        for i in range(num_test):
+            indexs = np.argsort(distances[i]) #对index排序
+            closestK = self.ytr[indexs[:k]] #取距离最小的K个点
+            count = np.bincount(closestK) #获取各类的得票数
+            Ypred[i] = np.argmax(count) #找出得票数最多的一个
+        return Ypred
+    
+    def predict_5Class(self,test_data,k,m,f,result_2Class):
+        num_test = test_data.shape[0]
+        Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
+        distances = self.getDistance(m,test_data,f)
+        
+        for i in range(num_test):
+            indexs = np.argsort(distances[i]) #对index排序
+            allDis = self.ytr[indexs] #获取到所有数据
+            deleteINdex = []
+            if result_2Class[i] == 1:
+                for j in range(1000):
+                    if(allDis[j] not in [0,1,8,9]):
+                        deleteINdex.append(j)
+            else:
+                for j in range(1000):
+                    if(allDis[j]in [0,1,8,9]):
+                        deleteINdex.append(j)
+            allDis = np.delete(allDis,deleteINdex)
+            closestK = allDis[:k] #取前K个点
+            count = np.bincount(closestK) #获取各类的得票数
+            Ypred[i] = np.argmax(count) #找出得票数最多的一个
+        return Ypred
     
     def evaluate(self, Ypred, y):
         num_test = len(y)
