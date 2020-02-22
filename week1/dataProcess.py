@@ -24,37 +24,30 @@ def loadOne(filename):
     # load single batch of cifar
     datadict = unpickle(filename)
     X = datadict[b'data']
-    Y = datadict[b'labels']
-    Y = np.array(Y)
+    Y = np.array(datadict[b'labels'])
     return X, Y
 
 def loadAll(valid_idx = None):
     """
     valid_idx:
     """
-    prefix = 'data_batch_'
+    prefix_before_index = '/data_batch_'
     if valid_idx == None:
         valid_idx = 0
     cnt = 0
     for surfix in range(1, 6):
         if surfix == valid_idx:
-            x_valid, y_valid = loadOne(datasetDir + '/' + prefix + str(surfix))
+            x_valid, y_valid = loadOne(datasetDir + prefix_before_index + str(surfix))
         elif cnt == 0:
-            x_train, y_train = loadOne(datasetDir + '/' + prefix + str(surfix))
+            x_train, y_train = loadOne(datasetDir + prefix_before_index + str(surfix))
             cnt = 1
         else:
-            X, Y = loadOne(datasetDir + '/' + prefix + str(surfix))
+            X, Y = loadOne(datasetDir + prefix_before_index + str(surfix))
             x_train = np.concatenate((x_train, X), axis = 0)
             y_train = np.concatenate((y_train, Y), axis = 0)
     del X, Y
     x_test, y_test = loadOne(datasetDir + '/test_batch')
     return x_train, y_train, x_valid, y_valid, x_test, y_test
-
-def loadData(filename):
-    dataDict = unpickle(filename)
-    data = dataDict[ b'data']
-    labels = np.array(dataDict[b'labels'])
-    return data, labels
 
 #采样函数
 def sample(data):
@@ -136,7 +129,7 @@ def plotK(dataK):
 
 
 def getValid():
-    x, y = loadData(batchBasePath + "5")
+    x, y = loadOne(batchBasePath + "5")
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 100
     figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  #对图像数据重新分割
@@ -160,7 +153,7 @@ def getValid():
     np.save(valid_path + 'y.npy', y_test)
 
 if __name__ == "__main__":
-    x, y = loadData(dataDir)
+    x, y = loadOne(dataDir)
     print(x.shape)
     print(y.shape)
     plotSample(x,y)
