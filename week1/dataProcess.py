@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from sklearn.decomposition import PCA
-from skimage.feature import hog
+from skimage.feature import hog, local_binary_pattern
 from skimage import color, filters
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
