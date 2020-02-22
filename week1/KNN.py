@@ -7,6 +7,9 @@ from scipy.spatial.distance import cosine
 
 
 def LmNormMetric(norm_argument):
+    """
+    This function returns a function, set the norm_argument to get the designated metric function
+    """
     def LmNorm(x1, x2):
         dis = []
         for i in range(x1.shape[0]):
@@ -15,19 +18,6 @@ def LmNormMetric(norm_argument):
             dis.append(pow(msum, 1 / norm_argument))  # pow 1/m
         return np.array(dis)
     return LmNorm
-
-def LmNorm(x1,x2,m):
-    # x1 should be the xtr matrix, ndarray
-    # x2 should be a row of the xpred matrix, list
-    # return: dis should also be a ndarray
-    dis = []
-    for i in range(x1.shape[0]):
-        abs_list = np.abs(x1[i] - x2)
-        msum = np.sum(abs_list**m)          # pow m and sum
-        # print(pow(psum, 1/m))
-        dis.append(pow(msum, 1/m))          # pow 1/m
-    #print(dis)
-    return np.array(dis)
 
 def cosDis(x1, x2):
     # x1 should be the xtr matrix, ndarray
@@ -61,24 +51,24 @@ class NearestNeighbor:
 def getDistances(x1, x2, metric, name_tag):
     # Parameters Explanation:
     #   @x1, x2:        numpy 2D-matrixes, x1 is train, x2 is valid
-    #   @weights:       A list indicating the weights distribution of cosine, L1 and L2 distance
-    #   @data_type:     1-5, 1 for raw, 2 for Sample Grey, 3 for PCA, 4 for HOG, 5 for GreyHOG
-    total_path = 'distances_' + str(name_tag) + '.npy'  # total_dis = weights_matrix x distances_matrix
+    #   @metric:        this metric will be called to calculate the distance
+    #   @name_tag:      name_tag will be used to name the files
+    dump_path = 'distances_' + str(name_tag) + '.npy'  # total_dis = weights_matrix x distances_matrix
 
     distances_matrix = []
     num_test = x2.shape[0]
 
     # get cos, L1 and L2
-    if os.path.exists(total_path):
-        print('%s detected, load npy data' % total_path)
-        distances_matrix = np.load(total_path)
+    if os.path.exists(dump_path):
+        print('%s detected, load npy data' % dump_path)
+        distances_matrix = np.load(dump_path)
     else:
         print('Start to create npy!')
         for i in range(num_test):
             if (i + 1) % 100 == 0:
                 print('%d of %d finished' % ((i + 1), num_test))
             distances_matrix.append(metric(x1, x2[i]))
-        np.save(total_path, np.array(distances_matrix))
+        np.save(dump_path, np.array(distances_matrix))
         print('L2 finished')
 
     return np.array(distances_matrix)
@@ -107,15 +97,18 @@ class KNearestNeighbor:
             closestK = self.ytr[indexs[:k]]             #取距离最小的K个点的标签值
             count = np.bincount(closestK)               #获取各类的得票数
             Ypred[i] = np.argmax(count)                 #找出得票数最多的一个
-            # if (i+1) % 10 == 0:
-            #    print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
         return Ypred
 
     #此处lm整理一下？
     def predict_2Class(self, test_data, k, m, f):
+        """
+        k: the KNN argument
+        m: metric
+        f:
+        """
         num_test = test_data.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
-        distances = self.getDistance(m,test_data,f)
+        distances = self.getDistance(m, test_data, f)
         
         for i in range(num_test):
             indexs = np.argsort(distances[i]) #对index排序
@@ -160,7 +153,6 @@ if __name__ == "__main__":
     
     x_valid = np.load(dataDir + '/x.npy').reshape(1000, 3072)
     y_valid = np.load(dataDir + '/y.npy').reshape(1000,)
-
 
     xtr_new, xva_new = pca(x_train, x_valid, n_components = 30)
     print(xva_new.shape)
