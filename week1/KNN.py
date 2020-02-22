@@ -47,17 +47,17 @@ class NearestNeighbor:
         return Ypred
 
 
-def getDistances(x1, x2, valid_idx=None, weights=None, data_type=None, value=None):
-    # Parameters Explaination:
-    #   @x1, x2:        numpy 2D-matrixs, x1 is train, x2 is valid
-    #   @valid_idx:     valid index from 1-5
+def getDistances(x1, x2, weights, data_type, value):
+    # Parameters Explanation:
+    #   @x1, x2:        numpy 2D-matrixes, x1 is train, x2 is valid
     #   @weights:       A list indicating the weights distribution of cosine, L1 and L2 distance
     #   @data_type:     1-5, 1 for raw, 2 for Sample Grey, 3 for PCA, 4 for HOG, 5 for GreyHOG
 
     dir_list = ['./Dis-Raw', './Dis-SampleGrey', './Dis-PCA', './Dis-HOG', './Dis-GreyHOG']
     dir_name = dir_list[data_type - 1]
     total_dis = '/distances_' + str(value) + '.npy'  # total_dis = weights_matrix x distances_matrix
-    [cos_dis, l1_dis, l2_dis] = ['/cos_dis_' + str(value) + '.npy', '/l1_dis_' + str(value) + '.npy',
+    [cos_dis, l1_dis, l2_dis] = ['/cos_dis_' + str(value) + '.npy',
+                                 '/l1_dis_' + str(value) + '.npy',
                                  '/l2_dis_' + str(value) + '.npy']
     weights_file = '/weights.npy'
 
@@ -138,17 +138,18 @@ class Optimizer:
 
 class KNearestNeighbor:
     def __init__(self):
-        pass
-    
+        return None         # don't leave it "pass"
+
     def train(self, x, y):
         self.xtr = x
         self.ytr = y
-        
+
     def predict(self, x, k = None, valid_idx = None, Optimizer = None):
         if k == None:
             k = 10
         else:
             self.value_k = k
+
         if valid_idx == None:
             self.valid_idx = 5
         else:
@@ -159,7 +160,7 @@ class KNearestNeighbor:
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
 
         self.dis_weights = [1, 0, 0]
-        distances_matrix = getDistances(self.xtr, x, valid_idx = valid_idx, weights = self.dis_weights, data_type = Optimizer.opt_type, value = Optimizer.opt_value)
+        distances_matrix = getDistances(self.xtr, x, weights = self.dis_weights, data_type = Optimizer.opt_type, value = Optimizer.opt_value)
         for i in range(num_test):
             #distances = cosDis(self.xtr, x[i])
             #distances = LmNorm(self.xtr, x[i], 2)

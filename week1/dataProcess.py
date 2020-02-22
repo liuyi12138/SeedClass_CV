@@ -29,7 +29,7 @@ def loadOne(filename):
 
 def loadAll(valid_idx = None):
     """
-    valid_idx:
+    valid_idx: choose one batch of those as validation set
     """
     prefix_before_index = '/data_batch_'
     if valid_idx == None:
@@ -45,7 +45,7 @@ def loadAll(valid_idx = None):
             X, Y = loadOne(datasetDir + prefix_before_index + str(surfix))
             x_train = np.concatenate((x_train, X), axis = 0)
             y_train = np.concatenate((y_train, Y), axis = 0)
-    del X, Y
+
     x_test, y_test = loadOne(datasetDir + '/test_batch')
     return x_train, y_train, x_valid, y_valid, x_test, y_test
 
