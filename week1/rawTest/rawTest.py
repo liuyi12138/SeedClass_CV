@@ -9,7 +9,7 @@ if __name__ == "__main__":
     x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(valid_idx)
 
     classifier = KNearestNeighbor()
-    classifier.train(xtr_new, y_train)
+    classifier.train(x_train, y_train)
     for k in range(1, 101):
-        result = classifier.predict(x=xva_new[:1000], k=k, valid_idx=valid_idx, Optimizer=opt)
+        result = classifier.predict(x=x_train, k=k, valid_idx=valid_idx)
         classifier.evaluate(result, y_valid[:1000])

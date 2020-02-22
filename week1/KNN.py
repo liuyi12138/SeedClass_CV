@@ -124,17 +124,11 @@ def getDistances(x1, x2, weights, data_type, value):
 
 
 class Optimizer:
-    def __init__(self):
-        self.dict = {'Raw': 1, 'SampleGrey': 2, 'PCA': 3, 'HOG': 4, 'GreyHOG': 5}
-        self.weights = [1, 0, 0]
-
-    def generate(self, opt_type=None, opt_value=None):
-        self.opt_type = self.dict[opt_type]
+    def __init__(self, opt_type, opt_value, weights=[1,0,0]):
+        cons_dict = {'Raw': 1, 'SampleGrey': 2, 'PCA': 3, 'HOG': 4, 'GreyHOG': 5}
+        self.opt_type = cons_dict[opt_type]
         self.opt_value = opt_value
-
-    def setWeights(self, weights):
         self.weights = weights
-
 
 class KNearestNeighbor:
     def __init__(self):
@@ -144,7 +138,7 @@ class KNearestNeighbor:
         self.xtr = x
         self.ytr = y
 
-    def predict(self, x, k = None, valid_idx = None, Optimizer = None):
+    def predict(self, x, k = None, valid_idx = None, optimizer = None):
         if k == None:
             k = 10
         else:
@@ -154,13 +148,16 @@ class KNearestNeighbor:
             self.valid_idx = 5
         else:
             self.valid_idx = valid_idx
-        
+
+        if optimizer == None:
+            optimizer = Optimizer()
+
         print('\nStart to process\n')
         num_test = x.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
 
         self.dis_weights = [1, 0, 0]
-        distances_matrix = getDistances(self.xtr, x, weights = self.dis_weights, data_type = Optimizer.opt_type, value = Optimizer.opt_value)
+        distances_matrix = getDistances(self.xtr, x, weights = self.dis_weights, data_type = optimizer.opt_type, value = optimizer.opt_value)
         for i in range(num_test):
             #distances = cosDis(self.xtr, x[i])
             #distances = LmNorm(self.xtr, x[i], 2)
@@ -175,9 +172,8 @@ class KNearestNeighbor:
             #    print('now: %d/%d, Ypred[%d] = %d\r' % (i+1, num_test, i, Ypred[i]))
         return Ypred
 
-
     #此处lm整理一下？
-    def predict_2Class(self,test_data,k,m,f):
+    def predict_2Class(self, test_data, k, m, f):
         num_test = test_data.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
         distances = self.getDistance(m,test_data,f)
@@ -189,7 +185,7 @@ class KNearestNeighbor:
             Ypred[i] = np.argmax(count) #找出得票数最多的一个
         return Ypred
     
-    def predict_5Class(self,test_data,k,m,f,result_2Class):
+    def predict_5Class(self,test_data, k, m, f, result_2Class):
         num_test = test_data.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
         distances = self.getDistance(m,test_data,f)
@@ -226,9 +222,7 @@ if __name__ == "__main__":
     x_valid = np.load(dataDir + '/x.npy').reshape(1000, 3072)
     y_valid = np.load(dataDir + '/y.npy').reshape(1000,)
 
-    opt = Optimizer()
-    opt.generate(opt_type = 'PCA', opt_value = 30)
-    opt.setWeights([1,0,0])
+    opt = Optimizer('PCA', 30, [1,0,0])
 
     xtr_new, xva_new = pca(x_train, x_valid, n_components = opt.opt_value)
     print(xva_new.shape)
