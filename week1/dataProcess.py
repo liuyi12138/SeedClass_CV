@@ -6,6 +6,7 @@ import os
 import sys
 from sklearn.decomposition import PCA
 from skimage.feature import hog
+from skimage import color, filters
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 try:

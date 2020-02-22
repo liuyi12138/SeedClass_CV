@@ -9,24 +9,29 @@ from scipy.spatial.distance import cosine
 def LmNormMetric(norm_argument):
     """
     This function returns a function, set the norm_argument to get the designated metric function
+    0 for cos
+    1 for 1-norm
+    2 for 2-norm
     """
-    def LmNorm(x1, x2):
-        dis = []
-        for i in range(x1.shape[0]):
-            abs_list = np.abs(x1[i] - x2)
-            msum = np.sum(abs_list ** norm_argument)  # pow m and sum
-            dis.append(pow(msum, 1 / norm_argument))  # pow 1/m
-        return np.array(dis)
-    return LmNorm
-
-def cosDis(x1, x2):
-    # x1 should be the xtr matrix, ndarray
-    # x2 should be a row of the xpred matrix, list
-    # return: dis should also be a ndarray
-    dis = []
-    for i in range(x1.shape[0]):
-        dis.append(cosine(x1[i], x2))
-    return np.array(dis)
+    if norm_argument == 0:
+        def cosDis(x1, x2):
+            # x1 should be the xtr matrix, ndarray
+            # x2 should be a row of the xpred matrix, list
+            # return: dis should also be a ndarray
+            dis = []
+            for i in range(x1.shape[0]):
+                dis.append(cosine(x1[i], x2))
+            return np.array(dis)
+        return cosDis
+    else:
+        def LmNorm(x1, x2):
+            dis = []
+            for i in range(x1.shape[0]):
+                abs_list = np.abs(x1[i] - x2)
+                msum = np.sum(abs_list ** norm_argument)  # pow m and sum
+                dis.append(pow(msum, 1 / norm_argument))  # pow 1/m
+            return np.array(dis)
+        return LmNorm
 
 class NearestNeighbor:
     def __init__(self):
@@ -99,17 +104,16 @@ class KNearestNeighbor:
             Ypred[i] = np.argmax(count)                 #找出得票数最多的一个
         return Ypred
 
-    #此处lm整理一下？
     def predict_2Class(self, test_data, k, m, f):
         """
         k: the KNN argument
         m: metric
-        f:
+        f: file name tag
         """
         num_test = test_data.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
-        distances = self.getDistance(m, test_data, f)
-        
+        distances = getDistances(self.xtr, test_data, LmNormMetric(m), str(m)+str(f))
+
         for i in range(num_test):
             indexs = np.argsort(distances[i]) #对index排序
             closestK = self.ytr[indexs[:k]] #取距离最小的K个点
@@ -118,10 +122,15 @@ class KNearestNeighbor:
         return Ypred
     
     def predict_5Class(self,test_data, k, m, f, result_2Class):
+        """
+        k: the KNN argument
+        m: metric
+        f: file name tag
+        """
         num_test = test_data.shape[0]
         Ypred = np.zeros(num_test, dtype = self.ytr.dtype)
-        distances = self.getDistance(m,test_data,f)
-        
+        distances = getDistances(self.xtr, test_data, LmNormMetric(m), str(m)+str(f))
+
         for i in range(num_test):
             indexs = np.argsort(distances[i]) #对index排序
             allDis = self.ytr[indexs] #获取到所有数据
