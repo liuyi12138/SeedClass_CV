@@ -4,6 +4,7 @@ import os
 from sklearn.decomposition import PCA
 # from skimage.feature import hog
 import matplotlib.pyplot as plt
+from skimage.feature import hog
 
 def unpickle(file):
     import pickle
@@ -71,6 +72,31 @@ def pca(x_train, x_valid, n_components = None):
         np.save(dir_name + xva_pca_name, x_valid_new)
     print('Finish PCA\n')
     return x_train_new,x_valid_new
+
+def Hog(x_train, x_test, f):
+    hog_path = "./HOG/"
+    para = f.split('_')
+    [ori, p1, c1] = [int(para[0]), int(para[1][0]), int(para[2][0])]
+
+    if os.path.exists(hog_path + str(f) + '.npy') == True:
+        x_train_new = np.load(hog_path  + str(f) + '.npy')
+        x_valid_new = np.load(hog_path + str(f) + '_valid.npy')
+    else:
+        figureData_train = x_train.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
+        x_train_new = []
+        for i in range(len(x_train)):
+            x_train_new.append(hog(figureData_train[i], orientations=ori, pixels_per_cell=(p1, p1), cells_per_block=(c1, c1), transform_sqrt=True))
+        x_train_new = np.array(x_train_new)
+        np.save(hog_path + str(f) + '.npy', x_train_new)
+        
+        figureData_test = x_test.reshape(len(x_test), 3, 32, 32).transpose(0, 2, 3, 1)
+        x_valid_new = []
+        for i in range(len(x_test)):
+            x_valid_new.append(hog(figureData_test[i], orientations=ori, pixels_per_cell=(p1, p1), cells_per_block=(c1, c1), transform_sqrt=True))
+        x_valid_new = np.array(x_valid_new)
+        np.save(hog_path + str(f) + '_valid.npy', x_valid_new)
+    return x_train_new, x_valid_new
+
 
 def plotK(dataK):
     data = []
