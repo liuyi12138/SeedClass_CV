@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from dataProcess import loadAll, pca
+from dataProcess import loadAll, pca, Hog
 from configTemplate import dataDir
 from math import pow
 from scipy.spatial.distance import cosine
@@ -35,7 +35,7 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
     #   @weights:       A list indicating the weights distribution of cosine, L1 and L2 distance
     #   @data_type:     1-5, 1 for raw, 2 for Sample Gray, 3 for PCA, 4 for HOG, 5 for GrayHOG
     
-    dir_list = ['./Dis-Raw', './Dis-SampleGray', './Dis-PCA', './Dis-HOG', './Dis-GrayHOG']
+    dir_list = ['./Dis-Raw', './Dis-SampleGray', './Dis-PCA', './Dis-HOG', './Dis-GrayHOG', './Dis-HOGPCA']
     dir_name = dir_list[data_type-1]
     total_dis = '/distances_' + str(value) + '.npy'        # total_dis = weights_matrix x distances_matrix
     [cos_dis, l1_dis, l2_dis] = ['/cos_dis_' + str(value) + '.npy', '/l1_dis_' + str(value) + '.npy', '/l2_dis_' + str(value) + '.npy']
@@ -104,7 +104,7 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
 
 class Optimizer:
     def __init__(self):
-        self.dict = {'Raw': 1, 'SampleGray': 2, 'PCA': 3, 'HOG': 4, 'GrayHOG': 5}
+        self.dict = {'Raw': 1, 'SampleGray': 2, 'PCA': 3, 'HOG': 4, 'GrayHOG': 5, 'HOGPCA': 6}
         self.weights = [1, 0, 0]
 
     def generate(self, opt_type = None, opt_value = None):
@@ -168,14 +168,25 @@ if __name__ == "__main__":
     y_valid = np.load(dataDir + '/y.npy').reshape(1000,)
 
     opt = Optimizer()
-    opt.generate(opt_type = 'PCA', opt_value = 30)
+    opt.generate(opt_type = 'HOG', opt_value = '9_88_33')
     opt.setWeights([1,0,0])
 
-    xtr_new, xva_new = pca(x_train, x_valid, n_components = opt.opt_value)
+    xtr_new , xva_new = Hog(x_train, x_valid, opt.opt_value)
+    #xtr_new, xva_new = pca(x_train, x_valid, n_components = opt.opt_value)
     print(xva_new.shape)
 
     classifier = KNearestNeighbor()
     classifier.train(xtr_new, y_train)
+    fp = open('./KNNlog.txt', 'w')
+    acc = []
+    max_acc = [0, 0]
     for k in range(1,101):
         result = classifier.predict(x = xva_new[:1000], k = k, valid_idx = valid_idx, Optimizer = opt)
-        classifier.evaluate(result, y_valid[:1000])
+        acc.append(classifier.evaluate(result, y_valid[:1000]))
+        fp.write('k = %d, acc = %.4f' %(k, acc[k-1]))
+        if acc[k-1] > max_acc[0]:
+            max_acc[0] = acc[k-1]
+            max_acc[1] = k
+
+    fp.close()
+    print('k = %d, max acc = %.4f' %(max_acc[1], max_acc[0]))
