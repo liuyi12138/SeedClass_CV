@@ -4,7 +4,7 @@ from dataProcess import loadAll, dataDir
 
 def findBestK():
     # k_list = [1, 2, 5, 10, 15, 30, 50, 100]
-    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(dataDir, valid_idx = 5)
+    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(valid_idx = 5)
     classifier = KNearestNeighbor()
 
     # Select 10000 train data randomly

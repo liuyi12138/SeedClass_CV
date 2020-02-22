@@ -183,7 +183,7 @@ class KNearestNeighbor:
 
 if __name__ == "__main__":
     valid_idx = 5
-    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(dataDir, valid_idx)
+    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(valid_idx)
     
     x_valid = np.load(dataDir + '/x.npy').reshape(1000, 3072)
     y_valid = np.load(dataDir + '/y.npy').reshape(1000,)
