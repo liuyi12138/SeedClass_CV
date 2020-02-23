@@ -2,7 +2,6 @@ import os
 import numpy as np
 from dataProcess import loadAll, pca
 from configTemplate import dataDir
-from math import pow
 from scipy.spatial.distance import cosine
 
 
@@ -12,26 +11,30 @@ def LmNormMetric(norm_argument):
     0 for cos
     1 for 1-norm
     2 for 2-norm
+    ...
     """
     if norm_argument == 0:
-        def cosDis(x1, x2):
+        def cosDis(labeled_points, point_to_calc):
             # x1 should be the xtr matrix, ndarray
             # x2 should be a row of the xpred matrix, list
             # return: dis should also be a ndarray
-            dis = []
-            for i in range(x1.shape[0]):
-                dis.append(cosine(x1[i], x2))
-            return np.array(dis)
+            dis_list = []
+            for i in range(labeled_points.shape[0]):
+                dis_list.append(cosine(labeled_points[i], point_to_calc))
+            return np.array(dis_list)
 
         return cosDis
     else:
-        def LmNorm(x1, x2):
-            dis = []
-            for i in range(x1.shape[0]):
-                abs_list = np.abs(x1[i] - x2)
-                msum = np.sum(abs_list ** norm_argument)  # pow m and sum
-                dis.append(pow(msum, 1 / norm_argument))  # pow 1/m
-            return np.array(dis)
+        def LmNorm(labeled_points, point_to_calc):
+            """
+            Note that the power of 1/m is omitted for better performance
+            """
+            dis_list = []
+            for i in range(labeled_points.shape[0]):
+                distance = np.sum(np.abs(labeled_points - point_to_calc)) if norm_argument == 1 \
+                    else np.sum((labeled_points - point_to_calc) ** norm_argument)
+                dis_list.append(distance)
+            return np.array(dis_list)
 
         return LmNorm
 

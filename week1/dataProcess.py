@@ -24,9 +24,9 @@ def unpickle(file):
 def loadOne(filename):
     # load single batch of cifar
     datadict = unpickle(filename)
-    X = datadict[b'data']
-    Y = np.array(datadict[b'labels'])
-    return X, Y
+    data = datadict[b'data']
+    labels = np.array(datadict[b'labels'])
+    return data, labels
 
 def loadAll(valid_idx = None):
     """
