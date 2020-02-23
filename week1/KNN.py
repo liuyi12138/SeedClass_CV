@@ -37,9 +37,6 @@ def LmNormMetric(norm_argument):
 
 
 class NearestNeighbor:
-    def __init__(self):
-        return None
-
     def train(self, x, y):
         self.xtr = x
         self.ytr = y
@@ -83,16 +80,12 @@ def getDistances(x1, x2, metric, name_tag):
 
 
 class KNearestNeighbor:
-    def __init__(self):
-        return None  # don't leave it "pass"
-
     def train(self, x, y):
         self.xtr = x
         self.ytr = y
 
-    def predict(self, x, k=10, valid_idx=5, metric=LmNormMetric(1)):
+    def predict(self, x, k=10, metric=LmNormMetric(1)):
         self.value_k = k
-        self.valid_idx = valid_idx
 
         print('\nStart to process\n')
         num_test = x.shape[0]
@@ -174,5 +167,5 @@ if __name__ == "__main__":
     classifier = KNearestNeighbor()
     classifier.train(xtr_new, y_train)
     for k in range(1, 101):
-        result = classifier.predict(x=xva_new[:1000], k=k, valid_idx=valid_idx)
+        result = classifier.predict(x=xva_new[:1000], k=k)
         classifier.evaluate(result, y_valid[:1000])

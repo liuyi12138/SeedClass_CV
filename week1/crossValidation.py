@@ -1,8 +1,6 @@
-import numpy as np
 import random
 from KNN import KNearestNeighbor
 from dataProcess import loadAll
-from configTemplate import dataDir
 
 def cross_valid(k = None, m = None):
     # k, m are hyperparameters
