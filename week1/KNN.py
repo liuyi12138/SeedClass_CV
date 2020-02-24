@@ -5,7 +5,7 @@ from configTemplate import dataDir
 from scipy.spatial.distance import cosine
 
 
-def LmNormMetric(norm_argument):
+def MetricGenerator(metric_type):
     """
     This function returns a function, set the norm_argument to get the designated metric function
     0 for cos
@@ -13,7 +13,7 @@ def LmNormMetric(norm_argument):
     2 for 2-norm
     ...
     """
-    if norm_argument == 0:
+    if metric_type == 0:
         def cosDis(labeled_points, point_to_calc):
             """
             Note that the power of 1/m is omitted for better performance
@@ -35,8 +35,8 @@ def LmNormMetric(norm_argument):
             """
             dis_list = []
             for i in range(labeled_points.shape[0]):
-                distance = np.sum(np.abs(labeled_points - point_to_calc)) if norm_argument == 1 \
-                    else np.sum((labeled_points - point_to_calc) ** norm_argument)
+                distance = np.sum(np.abs(labeled_points - point_to_calc)) if metric_type == 1 \
+                    else np.sum((labeled_points - point_to_calc) ** metric_type)
                 dis_list.append(distance)
             return np.array(dis_list)
 
@@ -72,69 +72,60 @@ class KNearestNeighbor:
         self.data_train = data_train
         self.labels_train = labels_train
 
-    def predict(self, data_test, k=10, metric=LmNormMetric(1)):
+    def predict(self, data_test, k=10, metric=MetricGenerator(1)):
         self.value_k = k
 
         print('\nStart to process\n')
         num_test = data_test.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
+        pred_results = np.zeros(num_test, dtype=self.labels_train.dtype)
 
         distances_matrix = getDistances(self.data_train, data_test, metric=metric, name_tag=k)
         for i in range(num_test):
-            indexs = np.argsort(distances_matrix[i])  # 对index排序
-            closestK = self.labels_train[indexs[:k]]  # 取距离最小的K个点的标签值
-            count = np.bincount(closestK)  # 获取各类的得票数
-            Ypred[i] = np.argmax(count)  # 找出得票数最多的一个
-        return Ypred
+            indexs = np.argsort(distances_matrix[i])   # 对index排序
+            closest_k = self.labels_train[indexs[:k]]  # 取距离最小的K个点的标签值
+            votes = np.bincount(closest_k)             # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)         # 找出得票数最多的一个
+        return pred_results
 
-    def predict_2Class(self, test_data, k, m, f):
-        """
-        k: the KNN argument
-        m: metric
-        f: file name tag
-        """
-        num_test = test_data.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
-        distances = getDistances(self.data_train, test_data, LmNormMetric(m), str(m) + str(f))
+    def predict_2Class(self, data_test, k, metric_type, name_tag):
+        num_test = data_test.shape[0]
+        pred_results = np.zeros(num_test, dtype=self.labels_train.dtype)
+        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type), str(metric_type) + str(name_tag))
 
         for i in range(num_test):
-            indexs = np.argsort(distances[i])  # 对index排序
-            closestK = self.labels_train[indexs[:k]]  # 取距离最小的K个点
-            count = np.bincount(closestK)  # 获取各类的得票数
-            Ypred[i] = np.argmax(count)  # 找出得票数最多的一个
-        return Ypred
+            indexs = np.argsort(distances[i])          # 对index排序
+            closest_k = self.labels_train[indexs[:k]]  # 取距离最小的K个点
+            votes = np.bincount(closest_k)             # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)         # 找出得票数最多的一个
+        return pred_results
 
-    def predict_5Class(self, test_data, k, m, f, result_2Class):
-        """
-        k: the KNN argument
-        m: metric
-        f: file name tag
-        """
-        num_test = test_data.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
-        distances = getDistances(self.data_train, test_data, LmNormMetric(m), str(m) + str(f))
+    def predict_5Class(self, data_test, k, metric_type, name_tag, result_2Class):
+        class_one = [0, 1, 8, 9]
+        num_test = data_test.shape[0]
+        pred_results = np.zeros(num_test, dtype=self.labels_train.dtype)
+        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type), str(metric_type) + str(name_tag))
 
         for i in range(num_test):
-            indexs = np.argsort(distances[i])  # 对index排序
-            allDis = self.labels_train[indexs]  # 获取到所有数据
-            deleteINdex = []
+            indexs = np.argsort(distances[i])   # 对index排序
+            labels = self.labels_train[indexs]  # 获取到所有数据
+            ind_del = []
             if result_2Class[i] == 1:
                 for j in range(1000):
-                    if (allDis[j] not in [0, 1, 8, 9]):
-                        deleteINdex.append(j)
+                    if (labels[j] not in class_one):
+                        ind_del.append(j)
             else:
                 for j in range(1000):
-                    if (allDis[j] in [0, 1, 8, 9]):
-                        deleteINdex.append(j)
-            allDis = np.delete(allDis, deleteINdex)
-            closestK = allDis[:k]  # 取前K个点
-            count = np.bincount(closestK)  # 获取各类的得票数
-            Ypred[i] = np.argmax(count)  # 找出得票数最多的一个
-        return Ypred
+                    if (labels[j] in class_one):
+                        ind_del.append(j)
+            labels = np.delete(labels, ind_del)
+            closest_k = labels[:k]               # 取前K个点
+            votes = np.bincount(closest_k)       # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)   # 找出得票数最多的一个
+        return pred_results
 
-    def evaluate(self, Ypred, y):
-        num_test = len(y)
-        num_correct = np.sum(Ypred == y)
+    def evaluate(self, pred_results, labels_test):
+        num_test = len(labels_test)
+        num_correct = np.sum(pred_results == labels_test)
         accuracy = float(num_correct) / num_test
         print("With k = %d, %d / %d correct => accuracy: %.2f %%" % (self.value_k, num_correct, num_test, accuracy * 100))
         return accuracy
