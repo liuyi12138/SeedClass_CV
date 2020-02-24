@@ -15,9 +15,11 @@ def LmNormMetric(norm_argument):
     """
     if norm_argument == 0:
         def cosDis(labeled_points, point_to_calc):
-            # x1 should be the xtr matrix, ndarray
-            # x2 should be a row of the xpred matrix, list
-            # return: dis should also be a ndarray
+            """
+            Note that the power of 1/m is omitted for better performance
+            labeld_points: should be a matrix
+            point_to_calc: ought to be vector
+            """
             dis_list = []
             for i in range(labeled_points.shape[0]):
                 dis_list.append(cosine(labeled_points[i], point_to_calc))
@@ -28,6 +30,8 @@ def LmNormMetric(norm_argument):
         def LmNorm(labeled_points, point_to_calc):
             """
             Note that the power of 1/m is omitted for better performance
+            labeld_points: should be a matrix
+            point_to_calc: ought to be vector
             """
             dis_list = []
             for i in range(labeled_points.shape[0]):
@@ -40,20 +44,20 @@ def LmNormMetric(norm_argument):
 
 
 class NearestNeighbor:
-    def train(self, x, y):
-        self.xtr = x
-        self.ytr = y
+    def train(self, data, labels):
+        self.data_train = data
+        self.labels_train = labels
 
-    def predict(self, x):
-        num_test = x.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.ytr.dtype)
-        for i in range(num_test):
-            distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
+    def predict(self, data_to_pred):
+        num_data = data_to_pred.shape[0]
+        pred_results = np.zeros(num_data, dtype=self.labels_train.dtype)
+        for i in range(num_data):
+            distances = np.sum(np.abs(self.data_train - data_to_pred[i]), axis=1)
             min_index = np.argmin(distances)
-            Ypred[i] = self.ytr[min_index]
+            pred_results[i] = self.labels_train[min_index]
             if (i + 1) % 10 == 0:
-                print('now: %d/%d' % (i + 1, num_test))
-        return Ypred
+                print('now: %d/%d' % (i + 1, num_data))
+        return pred_results
 
 
 def getDistances(x1, x2, metric, name_tag):
