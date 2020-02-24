@@ -42,24 +42,6 @@ def LmNormMetric(norm_argument):
 
         return LmNorm
 
-
-class NearestNeighbor:
-    def train(self, data, labels):
-        self.data_train = data
-        self.labels_train = labels
-
-    def predict(self, data_to_pred):
-        num_data = data_to_pred.shape[0]
-        pred_results = np.zeros(num_data, dtype=self.labels_train.dtype)
-        for i in range(num_data):
-            distances = np.sum(np.abs(self.data_train - data_to_pred[i]), axis=1)
-            min_index = np.argmin(distances)
-            pred_results[i] = self.labels_train[min_index]
-            if (i + 1) % 10 == 0:
-                print('now: %d/%d' % (i + 1, num_data))
-        return pred_results
-
-
 def getDistances(x1, x2, metric, name_tag):
     # Parameters Explanation:
     #   @x1, x2:        numpy 2D-matrixes, x1 is train, x2 is valid
