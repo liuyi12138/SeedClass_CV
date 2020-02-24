@@ -11,5 +11,5 @@ if __name__ == "__main__":
     classifier = KNearestNeighbor()
     classifier.train(x_train, y_train)
     for k in range(1, 101):
-        result = classifier.predict(x=x_train, k=k, valid_idx=valid_idx)
+        result = classifier.predict(data_test=x_train, k=k, valid_idx=valid_idx)
         classifier.evaluate(result, y_valid[:1000])

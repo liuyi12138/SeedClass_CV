@@ -42,17 +42,16 @@ def LmNormMetric(norm_argument):
 
         return LmNorm
 
-def getDistances(x1, x2, metric, name_tag):
+def getDistances(data_train, data_test, metric, name_tag):
     # Parameters Explanation:
     #   @x1, x2:        numpy 2D-matrixes, x1 is train, x2 is valid
     #   @metric:        this metric will be called to calculate the distance
     #   @name_tag:      name_tag will be used to name the files
-    dump_path = 'distances_' + str(name_tag) + '.npy'  # total_dis = weights_matrix x distances_matrix
+    dump_path = "distances_{}_.npy".format(str(name_tag))  # total_dis = weights_matrix x distances_matrix
 
     distances_matrix = []
-    num_test = x2.shape[0]
+    num_test = data_test.shape[0]
 
-    # get cos, L1 and L2
     if os.path.exists(dump_path):
         print('%s detected, load npy data' % dump_path)
         distances_matrix = np.load(dump_path)
@@ -61,30 +60,29 @@ def getDistances(x1, x2, metric, name_tag):
         for i in range(num_test):
             if (i + 1) % 100 == 0:
                 print('%d of %d finished' % ((i + 1), num_test))
-            distances_matrix.append(metric(x1, x2[i]))
+            distances_matrix.append(metric(data_train, data_test[i]))
         np.save(dump_path, np.array(distances_matrix))
-        print('L2 finished')
+        print("distance data saved at {}".format(dump_path))
 
     return np.array(distances_matrix)
 
 
 class KNearestNeighbor:
-    def train(self, x, y):
-        self.xtr = x
-        self.ytr = y
+    def train(self, data_train, labels_train):
+        self.data_train = data_train
+        self.labels_train = labels_train
 
-    def predict(self, x, k=10, metric=LmNormMetric(1)):
+    def predict(self, data_test, k=10, metric=LmNormMetric(1)):
         self.value_k = k
 
         print('\nStart to process\n')
-        num_test = x.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.ytr.dtype)
+        num_test = data_test.shape[0]
+        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
 
-        self.dis_weights = [1, 0, 0]
-        distances_matrix = getDistances(self.xtr, x, metric=metric, name_tag=k)
+        distances_matrix = getDistances(self.data_train, data_test, metric=metric, name_tag=k)
         for i in range(num_test):
             indexs = np.argsort(distances_matrix[i])  # 对index排序
-            closestK = self.ytr[indexs[:k]]  # 取距离最小的K个点的标签值
+            closestK = self.labels_train[indexs[:k]]  # 取距离最小的K个点的标签值
             count = np.bincount(closestK)  # 获取各类的得票数
             Ypred[i] = np.argmax(count)  # 找出得票数最多的一个
         return Ypred
@@ -96,12 +94,12 @@ class KNearestNeighbor:
         f: file name tag
         """
         num_test = test_data.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.ytr.dtype)
-        distances = getDistances(self.xtr, test_data, LmNormMetric(m), str(m) + str(f))
+        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
+        distances = getDistances(self.data_train, test_data, LmNormMetric(m), str(m) + str(f))
 
         for i in range(num_test):
             indexs = np.argsort(distances[i])  # 对index排序
-            closestK = self.ytr[indexs[:k]]  # 取距离最小的K个点
+            closestK = self.labels_train[indexs[:k]]  # 取距离最小的K个点
             count = np.bincount(closestK)  # 获取各类的得票数
             Ypred[i] = np.argmax(count)  # 找出得票数最多的一个
         return Ypred
@@ -113,12 +111,12 @@ class KNearestNeighbor:
         f: file name tag
         """
         num_test = test_data.shape[0]
-        Ypred = np.zeros(num_test, dtype=self.ytr.dtype)
-        distances = getDistances(self.xtr, test_data, LmNormMetric(m), str(m) + str(f))
+        Ypred = np.zeros(num_test, dtype=self.labels_train.dtype)
+        distances = getDistances(self.data_train, test_data, LmNormMetric(m), str(m) + str(f))
 
         for i in range(num_test):
             indexs = np.argsort(distances[i])  # 对index排序
-            allDis = self.ytr[indexs]  # 获取到所有数据
+            allDis = self.labels_train[indexs]  # 获取到所有数据
             deleteINdex = []
             if result_2Class[i] == 1:
                 for j in range(1000):
@@ -138,8 +136,7 @@ class KNearestNeighbor:
         num_test = len(y)
         num_correct = np.sum(Ypred == y)
         accuracy = float(num_correct) / num_test
-        print("[cos, L1, L2] = ", self.dis_weights, "With k = %d, %d / %d correct => accuracy: %.2f %%" % (
-        self.value_k, num_correct, num_test, accuracy * 100))
+        print("With k = %d, %d / %d correct => accuracy: %.2f %%" % (self.value_k, num_correct, num_test, accuracy * 100))
         return accuracy
 
 
@@ -156,5 +153,5 @@ if __name__ == "__main__":
     classifier = KNearestNeighbor()
     classifier.train(xtr_new, y_train)
     for k in range(1, 101):
-        result = classifier.predict(x=xva_new[:1000], k=k)
+        result = classifier.predict(data_test=xva_new[:1000], k=k)
         classifier.evaluate(result, y_valid[:1000])
