@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from dataProcess import loadAll, pca
-from configTemplate import dataDir
 from scipy.spatial.distance import cosine
 
 
@@ -135,11 +134,10 @@ if __name__ == "__main__":
     valid_idx = 5
     data_train, labels_train, data_valid, labels_valid, _, _ = loadAll(valid_idx)
 
-    xtr_new, xva_new = pca(data_train, data_valid, n_components=30)
-    print(xva_new.shape)
+    data_train_pca, data_valid_pca = pca(data_train, data_valid, n_components=30)
 
     classifier = KNearestNeighbor()
-    classifier.train(xtr_new, labels_train)
+    classifier.train(data_train_pca, labels_train)
     for k in range(1, 101):
-        result = classifier.predict(data_test=xva_new[:1000], k=k)
+        result = classifier.predict(data_test=data_valid_pca[:1000], k=k)
         classifier.evaluate(result, labels_valid[:1000])
