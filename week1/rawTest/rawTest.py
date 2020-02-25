@@ -6,7 +6,7 @@ import numpy as np
 
 if __name__ == "__main__":
     valid_idx = 5
-    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(valid_idx)
+    x_train, y_train, x_valid, y_valid, _, _ = loadAll(valid_idx)
 
     classifier = KNearestNeighbor()
     classifier.train(x_train, y_train)

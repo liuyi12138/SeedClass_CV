@@ -133,16 +133,13 @@ class KNearestNeighbor:
 
 if __name__ == "__main__":
     valid_idx = 5
-    x_train, y_train, x_valid, y_valid, x_test, y_test = loadAll(valid_idx)
+    data_train, labels_train, data_valid, labels_valid, _, _ = loadAll(valid_idx)
 
-    x_valid = np.load(dataDir + '/x.npy').reshape(1000, 3072)
-    y_valid = np.load(dataDir + '/y.npy').reshape(1000, )
-
-    xtr_new, xva_new = pca(x_train, x_valid, n_components=30)
+    xtr_new, xva_new = pca(data_train, data_valid, n_components=30)
     print(xva_new.shape)
 
     classifier = KNearestNeighbor()
-    classifier.train(xtr_new, y_train)
+    classifier.train(xtr_new, labels_train)
     for k in range(1, 101):
         result = classifier.predict(data_test=xva_new[:1000], k=k)
-        classifier.evaluate(result, y_valid[:1000])
+        classifier.evaluate(result, labels_valid[:1000])
