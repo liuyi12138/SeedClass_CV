@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from dataProcess import loadAll, pca, Hog
+from dataProcess import loadAll, pca, Hog, plotK
 from configTemplate import dataDir
 from math import pow
 from scipy.spatial.distance import cosine
@@ -24,7 +24,7 @@ def cosDis(x1,x2):
     # return: dis should also be a ndarray
     dis = []
     for i in range(x1.shape[0]):
-        dis.append(abs(cosine(x1[i], x2)))
+        dis.append(cosine(x1[i], x2))
     #print(dis)
     return np.array(dis)
 
@@ -52,10 +52,10 @@ def getDistances(x1, x2, valid_idx = None, weights = None, data_type = None, val
 
     # verify dir
     if not os.path.exists(dir_name):
-        print("'./Distances' doesn't exist, create one")
+        print("'%s' doesn't exist, create one" %dir_name)
         os.makedirs(dir_name)
     else:
-        print("'./Distances' detected, go on")
+        print("'%s' detected, go on" %dir_name)
 
     if os.path.exists(dir_name + weights_file) and os.path.exists(total_path):
         last_weights = np.load(dir_name + weights_file)
@@ -140,10 +140,6 @@ class KNearestNeighbor:
         self.dis_weights = [1, 0, 0]
         distances_matrix = getDistances(self.xtr, x, valid_idx = valid_idx, weights = self.dis_weights, data_type = Optimizer.opt_type, value = Optimizer.opt_value)
         for i in range(num_test):
-            #distances = cosDis(self.xtr, x[i])
-            #distances = LmNorm(self.xtr, x[i], 2)
-            #distances = np.sum(np.abs(self.xtr - x[i]), axis=1)
-            #print(distances_matrix[i])
             indexs = np.argsort(distances_matrix[i]) #对index排序
             closestK = self.ytr[indexs[:k]] #取距离最小的K个点的标签值
             #print('closestK is ', closestK, '\n')
@@ -168,25 +164,27 @@ if __name__ == "__main__":
     y_valid = np.load(dataDir + '/y.npy').reshape(1000,)
 
     opt = Optimizer()
-    opt.generate(opt_type = 'HOG', opt_value = '9_88_33')
+    #opt.generate(opt_type = 'HOGPCA', opt_value = '9_88_33_30')
+    opt.generate(opt_type = 'Raw', opt_value = 'noabs-cos')
     opt.setWeights([1,0,0])
 
-    xtr_new , xva_new = Hog(x_train, x_valid, opt.opt_value)
-    #xtr_new, xva_new = pca(x_train, x_valid, n_components = opt.opt_value)
-    print(xva_new.shape)
+    #xtr_new1 , xva_new1 = Hog(x_train, x_valid, opt.opt_value)
+    #xtr_new, xva_new = pca(xtr_new1, xva_new1, n_components = 30)
+    #print(xva_new.shape)
 
     classifier = KNearestNeighbor()
-    classifier.train(xtr_new, y_train)
+    classifier.train(x_train[:10000], y_train[:10000])
     fp = open('./KNNlog.txt', 'w')
     acc = []
     max_acc = [0, 0]
     for k in range(1,101):
-        result = classifier.predict(x = xva_new[:1000], k = k, valid_idx = valid_idx, Optimizer = opt)
-        acc.append(classifier.evaluate(result, y_valid[:1000]))
-        fp.write('k = %d, acc = %.4f' %(k, acc[k-1]))
+        result = classifier.predict(x = x_valid, k = k, valid_idx = valid_idx, Optimizer = opt)
+        acc.append(classifier.evaluate(result, y_valid))
+        fp.write('k = %d, acc = %.4f\n' %(k, acc[k-1]))
         if acc[k-1] > max_acc[0]:
             max_acc[0] = acc[k-1]
             max_acc[1] = k
 
     fp.close()
     print('k = %d, max acc = %.4f' %(max_acc[1], max_acc[0]))
+    plotK(acc)

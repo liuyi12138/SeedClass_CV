@@ -105,7 +105,7 @@ def plotK(dataK):
     x = range(1,len(data) + 1)
     max_indx = np.argmax(data)
     show_max='['+str(max_indx+1)+' '+str(data[max_indx])+']'
-    plt.plot(x, dataK, color='red', label='Hog&L1')
+    plt.plot(x, dataK, color='red', label='Raw&cos')
     plt.legend() # 显示图例
     plt.xlabel('K')
     plt.ylabel('accurity')
