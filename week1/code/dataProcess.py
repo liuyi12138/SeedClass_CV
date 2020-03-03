@@ -1,7 +1,6 @@
 #!/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
-
 import os
 import sys
 from sklearn.decomposition import PCA
@@ -10,7 +9,7 @@ from skimage import color, filters
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 try:
-    from config import dataDir, batchBasePath, projectPath, datasetDir
+    from config import batchBasePath, projectPath, datasetDir
 except:
     print("[ERROR] Please create your own config.py out of configTemplate.py before proceeding!")
     exit(0)
@@ -38,16 +37,15 @@ def loadAll(valid_idx=None):
     """
     valid_idx: choose one batch of those as validation set
     """
-    prefix_before_index = '/data_batch_'
     if valid_idx == None:
         valid_idx = 0
 
     data_train, labels_train = [], []
     for suffix in range(1, 6):
         if suffix == valid_idx:
-            data_valid, labels_valid = loadOne(datasetDir + prefix_before_index + str(suffix))
+            data_valid, labels_valid = loadOne(batchBasePath + str(suffix))
         else:
-            data_batch, labels_batch = loadOne(datasetDir + prefix_before_index + str(suffix))
+            data_batch, labels_batch = loadOne(batchBasePath + str(suffix))
             data_train = np.concatenate((data_train, data_batch), axis=0)
             labels_train = np.concatenate((labels_train, labels_batch), axis=0)
 
@@ -55,94 +53,87 @@ def loadAll(valid_idx=None):
     return data_train, labels_train, data_valid, labels_valid, data_test, labels_test
 
 
-# 采样函数
-def sample(data):
-    length = data.shape[0]
-    data = data.reshape(length, 3, 32, 32)
-    dataSample = data[:, :, ::2, ::2]
-    dataSample = np.reshape(dataSample, (dataSample.shape[0], -1))
-    return dataSample
-
-
 def plotSample(data, labels):
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-    sampleNum = 10
+    num_samples = 10
     plt.figure(figsize=(12, 12))
-    figureData = data.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  # 对图像数据重新分割
+    figure_data = data.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  # 对图像数据重新分割
     for label, classname in enumerate(classes):  # label返回元素位置，classname返回分类名称
-        indexArray = np.where(labels == label)[0]
-        for i in range(sampleNum):  # 选取前sampleNum张图片
-            pltIndex = i * len(classes) + label + 1  # 计算图片位置
-            plt.subplot(sampleNum, len(classes), pltIndex)  # 选择图片位置
-            plt.imshow(figureData[indexArray[i]])  # 绘制图像
+        index_array = np.where(labels == label)[0]
+        for i in range(num_samples):  # 选取前sampleNum张图片
+            plt_index = i * len(classes) + label + 1  # 计算图片位置
+            plt.subplot(num_samples, len(classes), plt_index)  # 选择图片位置
+            plt.imshow(figure_data[index_array[i]])  # 绘制图像
             plt.axis('off')  # 隐藏坐标轴
             if i == 0:
                 plt.title(classname)
     plt.show()
 
 
-def pca(x_train, x_test, f=100):
+def pca(data_train, data_test, n_components):
     """
     x_train:
     """
-    pca_path = projectPath + "/pca/"
-    if os.path.exists(pca_path + str(f) + '.npy') == True:
-        x_train_new = np.load(pca_path + str(f) + '.npy')
-        x_test_new = np.load(pca_path + 'test.npy')
+    pca_data_prefix = "/pca_data/"
+    pca_dir = os.path.dirname(os.path.realpath(__file__)) + pca_data_prefix
+    if os.path.exists(pca_dir + str(n_components) + '.npy') == True:
+        data_train_pca = np.load(pca_dir + str(n_components) + '.npy')
+        data_test_pca = np.load(pca_dir + 'test.npy')
     else:
-        pca = PCA(n_components=100)
-        pca.fit(x_train)
-        x_train_new = pca.transform(x_train)
-        x_test_new = pca.transform(x_test)
-        np.save((pca_path + str(f) + '.npy'), x_train_new)
-        np.save(pca_path + 'test.npy', x_test_new)
-    return x_train_new, x_test_new
+        pca = PCA(n_components=n_components)
+        pca.fit(data_train)
+        data_train_pca = pca.transform(data_train)
+        data_test_pca = pca.transform(data_test)
+        np.save((pca_dir + str(n_components) + '.npy'), data_train_pca)
+        np.save(pca_dir + 'test.npy', data_test_pca)
+    return data_train_pca, data_test_pca
 
 
 # Hog处理 注意更换一下地址
-def Hog(x_train, x_test, f):
-    hog_path = projectPath + "/hog/"
-    if os.path.exists(hog_path + str(f) + '.npy') == True:
-        x_train_new = np.load(hog_path + str(f) + '.npy')
-        x_test_new = np.load(hog_path + 'test.npy')
+def Hog(data_train, data_test, f):
+    hog_data_prefix = "/hog/"
+    hog_dir = os.path.dirname(os.path.realpath(__file__)) + hog_data_prefix
+    if os.path.exists(hog_dir + str(f) + '.npy') == True:
+        data_train_hog = np.load(hog_dir + str(f) + '.npy')
+        data_test_hog = np.load(hog_dir + 'test.npy')
     else:
-        figureData_train = x_train.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
-        x_train_new = []
-        for i in range(len(x_train)):
-            x_train_new.append(hog(figureData_train[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1),
+        figure_data_train = data_train.reshape(len(data_train), 3, 32, 32).transpose(0, 2, 3, 1)
+        data_train_hog = []
+        for i in range(len(data_train)):
+            data_train_hog.append(hog(figure_data_train[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1),
                                    visualise=False))
-        x_train_new = np.array(x_train_new)
-        np.save(hog_path + str(f) + '.npy', x_train_new)
+        data_train_hog = np.array(data_train_hog)
+        np.save(hog_dir + str(f) + '.npy', data_train_hog)
 
-        figureData_test = x_test.reshape(len(x_train), 3, 32, 32).transpose(0, 2, 3, 1)
-        x_test_new = []
-        for i in range(len(x_test)):
-            x_test_new.append(hog(figureData_test[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1),
+        figure_data_test = data_test.reshape(len(data_train), 3, 32, 32).transpose(0, 2, 3, 1)
+        data_test_hog = []
+        for i in range(len(data_test)):
+            data_test_hog.append(hog(figure_data_test[i], orientations=12, pixels_per_cell=(2, 2), cells_per_block=(1, 1),
                                   visualise=False))
-        x_test_new = np.array(x_test_new)
-        np.save(hog_path + 'test.npy', x_test_new)
-    return x_train_new, x_test_new
+        data_test_hog = np.array(data_test_hog)
+        np.save(hog_dir + 'test.npy', data_test_hog)
+    return data_train_hog, data_test_hog
 
 
 # 转灰度图
 def ToGray(data):
-    data_new = []
-    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
-    for i in range(len(figureData)):
-        img_gray = color.rgb2gray(figureData[i])
+    data_gray = []
+    figure_data = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    for i in range(len(figure_data)):
+        img_gray = color.rgb2gray(figure_data[i])
         image = filters.roberts(img_gray)
         image = image.reshape(1024)
-        data_new.append(image)
-    data_new = np.array(data_new)
-    return data_new
+        data_gray.append(image)
+    data_gray = np.array(data_gray)
+    return data_gray
 
 
 # LBP局部特征提取
 def LBP(data):
-    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    figure_data = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
     data_lbp = []
     for i in range(len(data)):
-        img_gray = color.rgb2gray(figureData[i])
+        img_gray = color.rgb2gray(figure_data[i])
         image_lbp = local_binary_pattern(img_gray, 8, 1)
         image_lbp = image_lbp.reshape(1024)
         data_lbp.append(image_lbp)
@@ -152,11 +143,11 @@ def LBP(data):
 
 # 获取镜像数据
 def getMirror(data, label):
-    figureData = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
+    figure_data = data.reshape(len(data), 3, 32, 32).transpose(0, 2, 3, 1)
     data_new = []
     label_new = []
     for i in range(len(data)):
-        image = figureData[i]
+        image = figure_data[i]
         image_mirror = image[:, ::-1]
         image = image.reshape(3 * 32 * 32)
         image_mirror = image_mirror.reshape(3 * 32 * 32)
@@ -170,14 +161,14 @@ def getMirror(data, label):
 
 
 # 绘制曲线图
-def plotK(dataK):
+def plotK(data_k):
     data = []
-    for i in range(len(dataK)):
-        data.append(float(format(dataK[i], '.3f')))
+    for i in range(len(data_k)):
+        data.append(float(format(data_k[i], '.3f')))
     x = range(1, len(data) + 1)
     max_indx = np.argmax(data)
     show_max = '[' + str(max_indx + 1) + ' ' + str(data[max_indx]) + ']'
-    plt.plot(x, dataK, color='red', label='Hog&L1')
+    plt.plot(x, data_k, color='red', label='Hog&L1')
     plt.legend()  # 显示图例
     plt.xlabel('K')
     plt.ylabel('accurity')
@@ -186,19 +177,18 @@ def plotK(dataK):
 
 
 def getValid():
-    x, y = loadOne(batchBasePath + "5")
+    data, labels = loadOne(batchBasePath + "5")
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     sampleNum = 100
-    figureData = x.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1)  # 对图像数据重新分割
     x_test = []
     y_test = []
     for label, classname in enumerate(classes):  # label返回元素位置，classname返回分类名称
         x_class = []
         y_class = []
-        indexArray = np.where(y == label)[0]
+        indexArray = np.where(labels == label)[0]
         for i in range(sampleNum):  # 选取前sampleNum张图片
-            x_class.append(x[indexArray[i]])
-            y_class.append(y[indexArray[i]])
+            x_class.append(data[indexArray[i]])
+            y_class.append(labels[indexArray[i]])
         x_test.append(x_class)
         y_test.append(y_class)
 
@@ -211,7 +201,7 @@ def getValid():
 
 
 if __name__ == "__main__":
-    x, y = loadOne(dataDir)
+    x, y = loadOne(batchBasePath + "1")
     print(x.shape)
     print(y.shape)
     plotSample(x, y)

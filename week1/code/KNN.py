@@ -41,6 +41,7 @@ def MetricGenerator(metric_type):
 
         return LmNorm
 
+
 def getDistances(data_train, data_test, metric, name_tag):
     # Parameters Explanation:
     #   @x1, x2:        numpy 2D-matrixes, x1 is train, x2 is valid
@@ -80,32 +81,34 @@ class KNearestNeighbor:
 
         distances_matrix = getDistances(self.data_train, data_test, metric=metric, name_tag=k)
         for i in range(num_test):
-            indexs = np.argsort(distances_matrix[i])   # 对index排序
+            indexs = np.argsort(distances_matrix[i])  # 对index排序
             closest_k = self.labels_train[indexs[:k]]  # 取距离最小的K个点的标签值
-            votes = np.bincount(closest_k)             # 获取各类的得票数
-            pred_results[i] = np.argmax(votes)         # 找出得票数最多的一个
+            votes = np.bincount(closest_k)  # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)  # 找出得票数最多的一个
         return pred_results
 
     def predict_2Class(self, data_test, k, metric_type, name_tag):
         num_test = data_test.shape[0]
         pred_results = np.zeros(num_test, dtype=self.labels_train.dtype)
-        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type), str(metric_type) + str(name_tag))
+        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type),
+                                 str(metric_type) + str(name_tag))
 
         for i in range(num_test):
-            indexs = np.argsort(distances[i])          # 对index排序
+            indexs = np.argsort(distances[i])  # 对index排序
             closest_k = self.labels_train[indexs[:k]]  # 取距离最小的K个点
-            votes = np.bincount(closest_k)             # 获取各类的得票数
-            pred_results[i] = np.argmax(votes)         # 找出得票数最多的一个
+            votes = np.bincount(closest_k)  # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)  # 找出得票数最多的一个
         return pred_results
 
     def predict_5Class(self, data_test, k, metric_type, name_tag, result_2Class):
         class_one = [0, 1, 8, 9]
         num_test = data_test.shape[0]
         pred_results = np.zeros(num_test, dtype=self.labels_train.dtype)
-        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type), str(metric_type) + str(name_tag))
+        distances = getDistances(self.data_train, data_test, MetricGenerator(metric_type),
+                                 str(metric_type) + str(name_tag))
 
         for i in range(num_test):
-            indexs = np.argsort(distances[i])   # 对index排序
+            indexs = np.argsort(distances[i])  # 对index排序
             labels = self.labels_train[indexs]  # 获取到所有数据
             ind_del = []
             if result_2Class[i] == 1:
@@ -117,16 +120,17 @@ class KNearestNeighbor:
                     if (labels[j] in class_one):
                         ind_del.append(j)
             labels = np.delete(labels, ind_del)
-            closest_k = labels[:k]               # 取前K个点
-            votes = np.bincount(closest_k)       # 获取各类的得票数
-            pred_results[i] = np.argmax(votes)   # 找出得票数最多的一个
+            closest_k = labels[:k]  # 取前K个点
+            votes = np.bincount(closest_k)  # 获取各类的得票数
+            pred_results[i] = np.argmax(votes)  # 找出得票数最多的一个
         return pred_results
 
     def evaluate(self, pred_results, labels_test):
         num_test = len(labels_test)
         num_correct = np.sum(pred_results == labels_test)
         accuracy = float(num_correct) / num_test
-        print("With k = %d, %d / %d correct => accuracy: %.2f %%" % (self.value_k, num_correct, num_test, accuracy * 100))
+        print(
+            "With k = %d, %d / %d correct => accuracy: %.2f %%" % (self.value_k, num_correct, num_test, accuracy * 100))
         return accuracy
 
 
