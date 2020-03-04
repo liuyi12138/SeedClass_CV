@@ -27,5 +27,29 @@ class softmax_classifier(object):
                     self._net_biases.append(np.random.uniform(-bias_range, bias_range, net_layers[i]))
 
         # set up the partial derivatives
+    def _back_propagate(self, input, tag):
+        """
+        store the propagation result accumulatively into a temporary updating parameters structure
+        :param input:
+        :param tag:
+        """
+        # check shape
 
-        return None
+        # store the propations result
+        pass
+
+    def _apply_propagation(self):
+        """
+        apply the temporary parameters updates to the weights and biases
+        """
+        # update all the propagation
+        pass
+
+    def batch_train(self, batch_data, tags):
+        """
+        :param batch_data:
+        :param tags:
+        """
+        for idx, input in enumerate(batch_data):
+            self._back_propagate(input, tags[idx])
+        self._apply_propagation()
