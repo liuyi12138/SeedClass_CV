@@ -53,3 +53,5 @@ class softmax_classifier(object):
         for idx, input in enumerate(batch_data):
             self._back_propagate(input, tags[idx])
         self._apply_propagation()
+
+# 数据集分batch的职责由外部实现
