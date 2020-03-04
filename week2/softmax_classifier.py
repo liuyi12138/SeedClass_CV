@@ -19,10 +19,13 @@ class softmax_classifier(object):
 
             weights_num = len(net_layers) - 1
             for i in range(1, weights_num):
-                self._net_weights.append(np.zeros(net_layers[i-1]), np.zeros(net_layers[i]))
-                if self._use_biases: self._net_biases.append(np.zeros(net_layers[i]))
+                weight_range = np.sqrt(6/(net_layers[i-1]+net_layers[i]))
+                self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layers[i-1], net_layers[i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
+
+                if self._use_biases:
+                    bias_range = np.sqrt(1/net_layers[i])
+                    self._net_biases.append(np.random.uniform(-bias_range, bias_range, net_layers[i]))
 
         # set up the partial derivatives
-
 
         return None
