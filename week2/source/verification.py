@@ -1,3 +1,4 @@
+#!/bin/env python
 import numpy as np
 
 def numerical_gradient(f, x):

@@ -1,3 +1,4 @@
+#!/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io,transform
@@ -18,7 +19,7 @@ def unpickle(filename):
     return data_dict
 
 
-def loadOne(filename):
+def load_one(filename):
     # load single batch of cifar dataset
     datadict = unpickle(filename)
     data = datadict[b'data']
@@ -26,7 +27,7 @@ def loadOne(filename):
     return data, labels
 
 #图像归一化
-def normalizationImage(data):
+def normalize_image(data):
     data = data.reshape(data.shape[0], 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
     data = data.reshape(data.shape[0], 3072)
     return np.array(data)/255
