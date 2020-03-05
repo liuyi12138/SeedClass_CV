@@ -30,12 +30,21 @@ class softmax_classifier(object):
     def _back_propagate(self, input, tag):
         """
         store the propagation result accumulatively into a temporary updating parameters structure
-        :param input:
-        :param tag:
+        :param input: the input image
+        :param tag: the tag should be the correct class index
         """
         if self._is_properly_init:
             # check shape
             if self._input_shape == len(input):
+                prob_results, _, inter_results = self.predict(input, is_return_inter_values=True)
+
+                # output layer partial derivatives
+                output_layer_partial_derivs = np.zeros(self._output_shape)
+                for i in len(output_layer_partial_derivs):
+                    output_layer_partial_derivs[i] = prob_results[i]-1 if i == tag else prob_results[i]
+
+                # todo: weights and biases back propagation
+                pass
 
                 # store the propations result
                 pass
@@ -48,21 +57,27 @@ class softmax_classifier(object):
             # update all the propagation
             pass
 
-    def predict(self, input):
+    def predict(self, input, is_return_inter_values=True):
         if self._is_properly_init:
-            inter_values = input
+            inter_value = input
+            inter_results = []
+
             if self._use_biases:
                 for idx, weight_mat in enumerate(self._net_weights):
-                    inter_values = inter_values.dot(weight_mat)+self._use_biases[idx]
+                    inter_value = inter_value.dot(weight_mat)+self._use_biases[idx]
+                    if is_return_inter_values:
+                        inter_results.append(inter_value.copy())
             else:
                 for weight_mat in self._net_weights:
-                    inter_values = inter_values.dot(weight_mat)
+                    inter_value = inter_value.dot(weight_mat)
+                    if is_return_inter_values:
+                        inter_results.append(inter_value.copy())
 
             # softmax function result and return
-            inter_values = np.exp(inter_values)
-            prob_results = inter_values / np.sum(inter_values)
+            inter_value = np.exp(inter_value)
+            prob_results = inter_value / np.sum(inter_value)
             pred_index = np.argmax(prob_results)
-            return prob_results, pred_index
+            return prob_results, pred_index, inter_results
 
 
     def batch_train(self, batch_data, tags):
