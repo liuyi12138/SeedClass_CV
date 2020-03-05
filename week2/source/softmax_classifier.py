@@ -48,6 +48,23 @@ class softmax_classifier(object):
             # update all the propagation
             pass
 
+    def predict(self, input):
+        if self._is_properly_init:
+            inter_values = input
+            if self._use_biases:
+                for idx, weight_mat in enumerate(self._net_weights):
+                    inter_values = inter_values.dot(weight_mat)+self._use_biases[idx]
+            else:
+                for weight_mat in self._net_weights:
+                    inter_values = inter_values.dot(weight_mat)
+
+            # softmax function result and return
+            inter_values = np.exp(inter_values)
+            prob_results = inter_values / np.sum(inter_values)
+            pred_index = np.argmax(prob_results)
+            return prob_results, pred_index
+
+
     def batch_train(self, batch_data, tags):
         """
         :param batch_data:
