@@ -23,11 +23,12 @@ class softmax_classifier(object):
                 self._pending_weights.append(np.zeros((net_layer_shapes[i-1]+1, net_layer_shapes[i])))
 
         # set up the partial derivatives
-    def _back_propagate(self, input, tag):
+    def _back_propagate(self, input, tag, learning_rate):
         """
         store the propagation result accumulatively into a temporary updating parameters structure
         :param input: the input image
         :param tag: the tag should be the correct class index
+        :return loss
         """
         if self._is_properly_init:
             # check shape
@@ -35,11 +36,13 @@ class softmax_classifier(object):
                 prob_results, pred_index, inter_results = self.predict(input, is_return_inter_values=True)
 
                 # output layer partial derivatives
-                one_hot_result = np.zeros(self._output_shape)
-                one_hot_result[tag] = 1
+                one_hot_tag = np.zeros(self._output_shape)
+                one_hot_tag[tag] = 1
+                loss = -np.log(np.sum(one_hot_tag*prob_results))
 
                 # w += (x.T).dot(p-one_hot)
-                self._pending_weights[0] -= np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_result))
+                self._pending_weights[0] -= np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_tag))*learning_rate
+                return loss
 
     def _apply_propagation(self, division):
         """
@@ -66,32 +69,36 @@ class softmax_classifier(object):
             pred_index = np.argmax(prob_results)
             return prob_results, pred_index, inter_results
 
-    def batch_train(self, batch_data, tags):
+    def batch_train(self, batch_data, tags, learning_rate):
         """
         :param batch_data:
         :param tags:
         """
+        batch_size = len(tags)
+        total_loss = 0
+
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
-                self._back_propagate(input, tags[idx])
-            self._apply_propagation(len(tags))
+                total_loss += self._back_propagate(input, tags[idx], learning_rate)
+            self._apply_propagation(batch_size)
+        total_loss /= batch_size
+        return total_loss
 
 # 数据集分batch的职责由外部实现
 
 if __name__ == "__main__":
     # tests are written below
     clsfir = softmax_classifier((10, 10))
-    print(clsfir._net_weights)
     assert clsfir._net_weights[0].shape == (11, 10)
-    print(clsfir._net_weights[0].shape)
+    print("weight matrix shape:", clsfir._net_weights[0].shape)
 
     batch_data = np.eye(10)
     tags = list(range(10))
-    print(batch_data, tags)
+    print("batch_data: {}, tags: {}".format(batch_data, tags))
 
     for i in range(100):
-        clsfir.batch_train(batch_data, tags)
+        print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
 
     for i in range(10):
-        print(clsfir.predict(batch_data[i]))
+        print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
 
