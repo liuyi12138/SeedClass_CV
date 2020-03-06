@@ -36,7 +36,7 @@ class softmax_classifier(object):
         if self._is_properly_init:
             # check shape
             if self._input_shape == len(input):
-                prob_results, _, inter_results = self.predict(input, is_return_inter_values=True)
+                prob_results, _index, _results = self.predict(input, is_return_inter_values=True)
 
                 # output layer partial derivatives
                 output_layer_partial_derivs = np.zeros(self._output_shape)

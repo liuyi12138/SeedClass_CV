@@ -14,7 +14,7 @@ def numerical_gradient(f, x):
         fxh = f(x)
         x[ix] = old_value
         
-        grad[ix] = ((fxh - fx) / h)[ix]
+        grad[ix] = ((fxh - fx) / h)
         it.iternext()
         
     return grad  
@@ -22,18 +22,23 @@ def numerical_gradient(f, x):
 def analytic_grad(f, x):
     return f(x)
 
-#f(x) = x^2
-def f(x):
-    return np.array(list(map(lambda num:num*num, x)))
+def numerical_grad(w):
+    x = np.array([4,3,5])
+    y = np.array([1,0])
+    p = normalization(np.dot(x,w))
+    loss = 0 - np.log(np.dot(y,p))
+    return loss
 
-#analytic_f(x) = 2*x
-def analytic_f(x):
-    return np.array(list(map(lambda num:2*num, x)))
+def analytic_grad(w):
+    x = np.array([4,3,5])
+    y = np.array([1,0])
+    p = normalization(np.dot(x,w))
+    return np.array(np.dot(np.mat(x).T, np.mat(p-y)))
 
 # 验证analytic_grad的正确性
 def verification():
-    x = np.array([1.,2.,3.,4.])
-    print("analytic_grad:       ", analytic_grad(analytic_f,x))
-    print("numerical_gradient:  ", numerical_gradient(f, x))
+    w = np.array([[0.11,0.2],[0.2,0.53],[0.3,0.14]])
+    print("analytic_grad:       \n", analytic_grad(w))
+    print("numerical_gradient:  \n", numerical_gradient(numerical_grad, w))
 
 verification()
