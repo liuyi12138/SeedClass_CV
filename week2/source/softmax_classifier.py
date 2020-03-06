@@ -47,6 +47,7 @@ class softmax_classifier(object):
     def _apply_propagation(self, division):
         """
         apply the temporary parameters updates to the weights and biases
+        :param division
         """
         if self._is_properly_init:
             # update all the propagation
@@ -55,6 +56,11 @@ class softmax_classifier(object):
                 self._pending_weights[i] *= 0      # reset the weights to zeros
 
     def predict(self, input, is_return_inter_values=False):
+        """
+
+        :param input: data input
+        :param is_return_inter_values: when True, this function returns the intermediate values for back propagation
+        """
         if self._is_properly_init:
             inter_value = np.concatenate((input, [1]), axis=0)
             inter_results = []
@@ -72,9 +78,12 @@ class softmax_classifier(object):
     def batch_train(self, batch_data, tags, learning_rate):
         """
         :param batch_data:
-        :param tags:
+        :param tags: the right answers of the batch, tags should be digits
         """
         batch_size = len(tags)
+        if batch_size.shape[0] != batch_size:
+            print("Wrong training data!")
+            return None
         total_loss = 0
 
         if self._is_properly_init:
