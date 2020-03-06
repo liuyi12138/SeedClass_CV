@@ -6,7 +6,7 @@ class softmax_classifier(object):
     def __init__(self, net_layer_shapes):
         self._is_properly_init = True
         # set up the weights and biases
-        if len(net_layer_shapes) <= 2:
+        if len(net_layer_shapes) < 2:
             print("Wrong network description!")
             self._is_properly_init = False
             return None
@@ -39,7 +39,7 @@ class softmax_classifier(object):
                 one_hot_result[tag] = 1
 
                 # w += (x.T).dot(p-one_hot)
-                self._pending_weights[0] += np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_result))
+                self._pending_weights[0] -= np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_result))
 
     def _apply_propagation(self, division):
         """
@@ -47,9 +47,9 @@ class softmax_classifier(object):
         """
         if self._is_properly_init:
             # update all the propagation
-            for i in len(self._net_weights):
+            for i in range(len(self._net_weights)):
                 self._net_weights[i] += self._pending_weights[i]/division
-                self._pending_weights *= 0      # reset the weights to zeros
+                self._pending_weights[i] *= 0      # reset the weights to zeros
 
     def predict(self, input, is_return_inter_values=False):
         if self._is_properly_init:
@@ -74,12 +74,24 @@ class softmax_classifier(object):
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
                 self._back_propagate(input, tags[idx])
-            self._apply_propagation()
+            self._apply_propagation(len(tags))
 
 # 数据集分batch的职责由外部实现
 
 if __name__ == "__main__":
     # tests are written below
-    from dataProcess import load_one
+    clsfir = softmax_classifier((10, 10))
+    print(clsfir._net_weights)
+    assert clsfir._net_weights[0].shape == (11, 10)
+    print(clsfir._net_weights[0].shape)
 
-    clsfir = softmax_classifier
+    batch_data = np.eye(10)
+    tags = list(range(10))
+    print(batch_data, tags)
+
+    for i in range(100):
+        clsfir.batch_train(batch_data, tags)
+
+    for i in range(10):
+        print(clsfir.predict(batch_data[i]))
+
