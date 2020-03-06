@@ -3,7 +3,7 @@
 import numpy as np
 
 class softmax_classifier(object):
-    def __init__(self, net_layer_shapes):
+    def __init__(self, net_layer_shapes, k,L):
         self._is_properly_init = True
         # set up the weights and biases
         if len(net_layer_shapes) < 2:
@@ -15,6 +15,8 @@ class softmax_classifier(object):
             self._output_shape = net_layer_shapes[-1]
             self._net_weights = []
             self._pending_weights = []      # used to store those to-be-applied weights
+            self._k = k
+            self._L = L
 
             weights_num = len(net_layer_shapes)-1
             for i in range(1, weights_num+1):
@@ -51,6 +53,10 @@ class softmax_classifier(object):
         if self._is_properly_init:
             # update all the propagation
             for i in range(len(self._net_weights)):
+                if(self._L == 1):
+                    self._net_weights[i] -= self._k*np.sign(self._net_weights[i])*learning_rate/len(self._net_weights[i])  #L1
+                if(self._L == 2):
+                    self._net_weights[i] -= self._k*self._net_weights[i]*learning_rate/len(self._net_weights[i])  #L2
                 self._net_weights[i] += self._pending_weights[i]/division
                 self._pending_weights[i] *= 0      # reset the weights to zeros
 
@@ -86,19 +92,94 @@ class softmax_classifier(object):
 
 # 数据集分batch的职责由外部实现
 
+
+def unpickle(filename):
+    """
+    data_dict: a object consists of data and labels
+    """
+    import pickle
+    with open(filename, 'rb') as fo:
+        data_dict = pickle.load(fo, encoding='bytes')
+    return data_dict
+
+
+def loadOne(filename):
+    # load single batch of cifar dataset
+    datadict = unpickle(filename)
+    data = datadict[b'data']
+    labels = np.array(datadict[b'labels'])
+    return data, labels
+
+def normalizationImage(data):
+    data = data.reshape(data.shape[0], 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
+    data = data.reshape(data.shape[0], 3072)
+    return np.array(data)/255
+
+def pca(data_train, data_test, n_components):
+    pca = PCA(n_components=n_components)
+    pca.fit(data_train)
+    data_train_pca = pca.transform(data_train)
+    data_test_pca = pca.transform(data_test)
+    return data_train_pca, data_test_pca
+
 if __name__ == "__main__":
     # tests are written below
-    clsfir = softmax_classifier((10, 10))
-    assert clsfir._net_weights[0].shape == (11, 10)
-    print("weight matrix shape:", clsfir._net_weights[0].shape)
+    # clsfir = softmax_classifier((10, 10))
+    # assert clsfir._net_weights[0].shape == (11, 10)
+    # print("weight matrix shape:", clsfir._net_weights[0].shape)
 
-    batch_data = np.eye(10)
-    tags = list(range(10))
-    print("batch_data: {}, tags: {}".format(batch_data, tags))
+    # batch_data = np.eye(10)
+    # tags = list(range(10))
+    # print("batch_data: {}, tags: {}".format(batch_data, tags))
 
-    for i in range(100):
-        print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
+    # for i in range(100):
+    #     print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
 
-    for i in range(10):
-        print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
+    # for i in range(10):
+    #     print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
 
+    x_train,y_train = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_1")
+    x_test,y_test = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_2")
+    x_train = normalizationImage(x_train)
+    x_test = normalizationImage(x_test)
+
+    k = 10
+    L = 1
+    batch_size = 256
+    learning_rate = 0.02
+    epoch = 100
+    
+    clsfir = softmax_classifier((3072, 10),k,L)
+    loss = []
+
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+
+    for i in range(epoch):
+        n = 0
+        lossAll = 0
+        while(n + batch_size < len(x_train)):
+            x_temp = x_train[n : n+batch_size]
+            y_temp = y_train[n : n+batch_size]
+            lossAll += clsfir.batch_train(x_temp, y_temp, learning_rate)
+            n += batch_size
+        loss_temp = float(lossAll)/((n/batch_size)+1)
+        loss.append(loss_temp)
+        print("for epoch{}, loss is {} ".format(i, loss_temp))
+        
+        permutation = np.random.permutation(y_train.shape[0])
+        x_train = x_train[permutation]
+        y_train = y_train[permutation]
+        
+    plt.plot(loss)
+    plt.show()
+
+    result = []
+    for i in range(10000):
+        predict = clsfir.predict(x_test[i])[1]
+        result.append(predict)
+        
+    num_test= 10000
+    num_correct = np.sum(result == y_test) #计算准确率
+    accuracy = float(num_correct) / num_test
+    print("acc: %f" % accuracy)
