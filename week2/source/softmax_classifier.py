@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 class softmax_classifier(object):
     def __init__(self, net_layer_shapes, k,L):
@@ -49,7 +50,7 @@ class softmax_classifier(object):
                     #self._pending_weights[i] -= np.mat(np.concatenate((input,[1]))).T.dot()
                 return loss
 
-    def _apply_propagation(self, division):
+    def _apply_propagation(self, division, learning_rate):
         """
         apply the temporary parameters updates to the weights and biases
         :param division
@@ -98,7 +99,7 @@ class softmax_classifier(object):
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
                 total_loss += self._back_propagate(input, tags[idx], learning_rate)
-            self._apply_propagation(batch_size)
+            self._apply_propagation(batch_size, learning_rate)
         total_loss /= batch_size
         return total_loss
 
@@ -136,62 +137,62 @@ def pca(data_train, data_test, n_components):
 
 if __name__ == "__main__":
     # tests are written below
-    # clsfir = softmax_classifier((10, 10))
-    # assert clsfir._net_weights[0].shape == (11, 10)
-    # print("weight matrix shape:", clsfir._net_weights[0].shape)
+    clsfir = softmax_classifier((10, 10))
+    assert clsfir._net_weights[0].shape == (11, 10)
+    print("weight matrix shape:", clsfir._net_weights[0].shape)
 
-    # batch_data = np.eye(10)
-    # tags = list(range(10))
-    # print("batch_data: {}, tags: {}".format(batch_data, tags))
+    batch_data = np.eye(10)
+    tags = list(range(10))
+    print("batch_data: {}, tags: {}".format(batch_data, tags))
 
-    # for i in range(100):
-    #     print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
+    for i in range(100):
+        print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
 
-    # for i in range(10):
-    #     print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
+    for i in range(10):
+        print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
 
-    x_train,y_train = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_1")
-    x_test,y_test = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_2")
-    x_train = normalizationImage(x_train)
-    x_test = normalizationImage(x_test)
-
-    k = 10
-    L = 1
-    batch_size = 256
-    learning_rate = 0.02
-    epoch = 100
-    
-    clsfir = softmax_classifier((3072, 10),k,L)
-    loss = []
-
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-
-    for i in range(epoch):
-        n = 0
-        lossAll = 0
-        while(n + batch_size < len(x_train)):
-            x_temp = x_train[n : n+batch_size]
-            y_temp = y_train[n : n+batch_size]
-            lossAll += clsfir.batch_train(x_temp, y_temp, learning_rate)
-            n += batch_size
-        loss_temp = float(lossAll)/((n/batch_size)+1)
-        loss.append(loss_temp)
-        print("for epoch{}, loss is {} ".format(i, loss_temp))
-        
-        permutation = np.random.permutation(y_train.shape[0])
-        x_train = x_train[permutation]
-        y_train = y_train[permutation]
-        
-    plt.plot(loss)
-    plt.show()
-
-    result = []
-    for i in range(10000):
-        predict = clsfir.predict(x_test[i])[1]
-        result.append(predict)
-        
-    num_test= 10000
-    num_correct = np.sum(result == y_test) #计算准确率
-    accuracy = float(num_correct) / num_test
-    print("acc: %f" % accuracy)
+#    x_train,y_train = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_1")
+#    x_test,y_test = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_2")
+#    x_train = normalizationImage(x_train)
+#    x_test = normalizationImage(x_test)
+#
+#    k = 10
+#    L = 1
+#    batch_size = 256
+#    learning_rate = 0.02
+#    epoch = 100
+#
+#    clsfir = softmax_classifier((3072, 10),k,L)
+#    loss = []
+#
+#    plt.xlabel('Epoch')
+#    plt.ylabel('Loss')
+#
+#    for i in range(epoch):
+#        n = 0
+#        lossAll = 0
+#        while(n + batch_size < len(x_train)):
+#            x_temp = x_train[n : n+batch_size]
+#            y_temp = y_train[n : n+batch_size]
+#            lossAll += clsfir.batch_train(x_temp, y_temp, learning_rate)
+#            n += batch_size
+#        loss_temp = float(lossAll)/((n/batch_size)+1)
+#        loss.append(loss_temp)
+#        print("for epoch{}, loss is {} ".format(i, loss_temp))
+#
+#        permutation = np.random.permutation(y_train.shape[0])
+#        x_train = x_train[permutation]
+#        y_train = y_train[permutation]
+#
+#    plt.plot(loss)
+#    plt.show()
+#
+#    result = []
+#    for i in range(10000):
+#        predict = clsfir.predict(x_test[i])[1]
+#        result.append(predict)
+#
+#    num_test= 10000
+#    num_correct = np.sum(result == y_test) #计算准确率
+#    accuracy = float(num_correct) / num_test
+#    print("acc: %f" % accuracy)
