@@ -50,14 +50,15 @@ class softmax_classifier(object):
 
                 # w += (x.T).dot(p-one_hot)
                 current_derivative = np.mat(prob_results - one_hot_tag)
-                for i in range(-1, -len(self._net_weights), -1): # totally len(self._net_weights)-1
-                    self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i-1], [1]))).T.dot(
+                for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
+                    self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
                         current_derivative
                     ) * learning_rate
-                    current_derivative = current_derivative.dot(self._net_weights[i][:-1,:].T)
-                self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(current_derivative) * learning_rate
+                    current_derivative = current_derivative.dot(self._net_weights[i][:-1, :].T)  # derivative of those layers
+                self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(
+                    current_derivative) * learning_rate
 
-                    # next
+                # next
                 return loss
 
     def _apply_propagation(self, division, learning_rate):
@@ -90,7 +91,7 @@ class softmax_classifier(object):
             inter_results = []
 
             for weight_mat in self._net_weights:
-                inter_value = np.concatenate((inter_value,[1])).dot(weight_mat)
+                inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
                 if is_return_inter_values: inter_results.append(inter_value)
 
             # softmax function result and return
@@ -155,7 +156,7 @@ def pca(data_train, data_test, n_components):
 
 if __name__ == "__main__":
     # tests are written below
-    if True:
+    if False:
         clsfir = softmax_classifier((10, 4, 10), 10, 10)
         assert clsfir._net_weights[0].shape == (11, 4)
         print("weight matrix shape:", clsfir._net_weights[0].shape)
@@ -166,23 +167,26 @@ if __name__ == "__main__":
 
         for i in range(100):
             print("for batch_{}, loss is {} ".format(i,
-                                                     clsfir.batch_train(batch_data, tags, 1)))  # print loss when trainiing
+                                                     clsfir.batch_train(batch_data, tags,
+                                                                        1)))  # print loss when trainiing
 
         for i in range(10):
-            print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))  # print prediction result
+            print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[
+                1]))  # print prediction result
     else:
-        x_train,y_train = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_1")
-        x_test,y_test = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_2")
+
+        x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
+        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/data_batch_2")
         x_train = normalizationImage(x_train)
         x_test = normalizationImage(x_test)
 
         k = 10
-        L = 1
+        L = 3
         batch_size = 256
         learning_rate = 0.02
         epoch = 100
 
-        clsfir = softmax_classifier((3072, 10),k,L)
+        clsfir = softmax_classifier((3072, 175, 10), k, L)
         loss = []
 
         plt.xlabel('Epoch')
@@ -191,12 +195,12 @@ if __name__ == "__main__":
         for i in range(epoch):
             n = 0
             lossAll = 0
-            while(n + batch_size < len(x_train)):
-                x_temp = x_train[n : n+batch_size]
-                y_temp = y_train[n : n+batch_size]
+            while (n + batch_size < len(x_train)):
+                x_temp = x_train[n: n + batch_size]
+                y_temp = y_train[n: n + batch_size]
                 lossAll += clsfir.batch_train(x_temp, y_temp, learning_rate)
                 n += batch_size
-            loss_temp = float(lossAll)/((n/batch_size)+1)
+            loss_temp = float(lossAll) / ((n / batch_size) + 1)
             loss.append(loss_temp)
             print("for epoch{}, loss is {} ".format(i, loss_temp))
 
@@ -212,7 +216,7 @@ if __name__ == "__main__":
             predict = clsfir.predict(x_test[i])[1]
             result.append(predict)
 
-        num_test= 10000
-        num_correct = np.sum(result == y_test) #计算准确率
+        num_test = 10000
+        num_correct = np.sum(result == y_test)  # 计算准确率
         accuracy = float(num_correct) / num_test
         print("acc: %f" % accuracy)
