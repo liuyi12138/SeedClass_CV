@@ -1,6 +1,7 @@
 #!/bin/env python3
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 class softmax_classifier(object):
     def __init__(self, net_layer_shapes, k,L):
@@ -44,6 +45,8 @@ class softmax_classifier(object):
 
                 # w += (x.T).dot(p-one_hot)
                 self._pending_weights[0] -= np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_tag))*learning_rate
+                #for i in range(-1, -1-len(self._net_weights), -1):
+                    #self._pending_weights[i] -= np.mat(np.concatenate((input,[1]))).T.dot()
                 return loss
 
     def _apply_propagation(self, division):
