@@ -4,8 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
+
 class softmax_classifier(object):
-    def __init__(self, net_layer_shapes, k,L):
+    def __init__(self, net_layer_shapes, k, L):
         self._is_properly_init = True
         # set up the weights and biases
         if len(net_layer_shapes) < 2:
@@ -16,17 +17,20 @@ class softmax_classifier(object):
             self._input_shape = net_layer_shapes[0]
             self._output_shape = net_layer_shapes[-1]
             self._net_weights = []
-            self._pending_weights = []      # used to store those to-be-applied weights
+            self._pending_weights = []  # used to store those to-be-applied weights
             self._k = k
             self._L = L
 
-            weights_num = len(net_layer_shapes)-1
-            for i in range(1, weights_num+1):
+            weights_num = len(net_layer_shapes) - 1
+            for i in range(1, weights_num + 1):
                 weight_range = np.sqrt(6 / (net_layer_shapes[i - 1] + net_layer_shapes[i]))
-                self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layer_shapes[i-1]+1, net_layer_shapes[i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
-                self._pending_weights.append(np.zeros((net_layer_shapes[i-1]+1, net_layer_shapes[i])))
+                self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layer_shapes[i - 1] + 1,
+                                                                                         net_layer_shapes[
+                                                                                             i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
+                self._pending_weights.append(np.zeros((net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
 
         # set up the partial derivatives
+
     def _back_propagate(self, input, tag, learning_rate):
         """
         store the propagation result accumulatively into a temporary updating parameters structure
@@ -42,12 +46,13 @@ class softmax_classifier(object):
                 # output layer partial derivatives
                 one_hot_tag = np.zeros(self._output_shape)
                 one_hot_tag[tag] = 1
-                loss = -np.log(np.sum(one_hot_tag*prob_results))
+                loss = -np.log(np.sum(one_hot_tag * prob_results))
 
                 # w += (x.T).dot(p-one_hot)
-                self._pending_weights[0] -= np.mat(np.concatenate((input,[1]), axis=0)).T.dot(np.mat(prob_results-one_hot_tag))*learning_rate
-                #for i in range(-1, -1-len(self._net_weights), -1):
-                    #self._pending_weights[i] -= np.mat(np.concatenate((input,[1]))).T.dot()
+                self._pending_weights[0] -= np.mat(np.concatenate((input, [1]), axis=0)).T.dot(
+                    np.mat(prob_results - one_hot_tag)) * learning_rate
+                # for i in range(-1, -1-len(self._net_weights), -1):
+                # self._pending_weights[i] -= np.mat(np.concatenate((input,[1]))).T.dot()
                 return loss
 
     def _apply_propagation(self, division, learning_rate):
@@ -58,12 +63,14 @@ class softmax_classifier(object):
         if self._is_properly_init:
             # update all the propagation
             for i in range(len(self._net_weights)):
-                if(self._L == 1):
-                    self._net_weights[i] -= self._k*np.sign(self._net_weights[i])*learning_rate/len(self._net_weights[i])  #L1
-                if(self._L == 2):
-                    self._net_weights[i] -= self._k*self._net_weights[i]*learning_rate/len(self._net_weights[i])  #L2
-                self._net_weights[i] += self._pending_weights[i]/division
-                self._pending_weights[i] *= 0      # reset the weights to zeros
+                if (self._L == 1):
+                    self._net_weights[i] -= self._k * np.sign(self._net_weights[i]) * learning_rate / len(
+                        self._net_weights[i])  # L1
+                if (self._L == 2):
+                    self._net_weights[i] -= self._k * self._net_weights[i] * learning_rate / len(
+                        self._net_weights[i])  # L2
+                self._net_weights[i] += self._pending_weights[i] / division
+                self._pending_weights[i] *= 0  # reset the weights to zeros
 
     def predict(self, input, is_return_inter_values=False):
         """
@@ -103,6 +110,7 @@ class softmax_classifier(object):
         total_loss /= batch_size
         return total_loss
 
+
 # 数据集分batch的职责由外部实现
 
 
@@ -123,10 +131,12 @@ def loadOne(filename):
     labels = np.array(datadict[b'labels'])
     return data, labels
 
+
 def normalizationImage(data):
     data = data.reshape(data.shape[0], 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
     data = data.reshape(data.shape[0], 3072)
-    return np.array(data)/255
+    return np.array(data) / 255
+
 
 def pca(data_train, data_test, n_components):
     pca = PCA(n_components=n_components)
@@ -134,6 +144,7 @@ def pca(data_train, data_test, n_components):
     data_train_pca = pca.transform(data_train)
     data_test_pca = pca.transform(data_test)
     return data_train_pca, data_test_pca
+
 
 if __name__ == "__main__":
     # tests are written below
@@ -146,10 +157,11 @@ if __name__ == "__main__":
     print("batch_data: {}, tags: {}".format(batch_data, tags))
 
     for i in range(100):
-        print("for batch_{}, loss is {} ".format(i, clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
+        print("for batch_{}, loss is {} ".format(i,
+                                                 clsfir.batch_train(batch_data, tags, 10)))  # print loss when trainiing
 
     for i in range(10):
-        print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))             # print prediction result
+        print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[1]))  # print prediction result
 
 #    x_train,y_train = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_1")
 #    x_test,y_test = loadOne("D:/HUST/寒假课程资料/数字图像处理/课设/week1/cifar-10-batches-py/data_batch_2")
