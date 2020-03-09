@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 
+# todo fix activation
 class softmax_classifier(object):
     def __init__(self, net_layer_shapes, norm_ratio, norm_method):
         self._is_properly_init = True
@@ -26,8 +27,8 @@ class softmax_classifier(object):
             for i in range(1, weights_num + 1):
                 weight_range = np.sqrt(6 / (net_layer_shapes[i - 1] + net_layer_shapes[i]))
                 self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layer_shapes[i - 1] + 1,
-                                                                             net_layer_shapes[
-                                                                                 i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
+                                                                                         net_layer_shapes[
+                                                                                             i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
                 self._pending_weights.append(np.zeros((net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
 
         # set up the partial derivatives
@@ -62,13 +63,11 @@ class softmax_classifier(object):
                         loss += self._norm_ratio * norm_derivative_method(weights)
 
                 # activation function setup
-                act_derivative = lambda x: x
+                act_derivative = lambda y: 1
                 if self._activation_method == "relu":
-                    act_derivative = lambda x: np.multiply(x, (x > 0))
+                    act_derivative = lambda y: np.multiply(y, (y > 0))
                 elif self._activation_method == "tanh":
-                    def act_derivative(value):
-                        tmp = np.tanh(value)
-                        return 1 - np.multiply(tmp, tmp)
+                    act_derivative = lambda y: 1 - np.multiply(y, y)
 
                 # w += (x.T).dot(p-one_hot)
                 current_derivative = np.mat(prob_results - one_hot_tag)
@@ -76,8 +75,10 @@ class softmax_classifier(object):
                     self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
                         current_derivative
                     ) * learning_rate
+                    # derivative of results of activation function, so the biases is ignored here
                     current_derivative = current_derivative.dot(
-                        self._net_weights[i][:-1, :].T)  # derivative of those layers
+                        self._net_weights[i][:-1, :].T)
+                    # derivative of activation function, given function results
                     current_derivative = np.multiply(act_derivative(np.array(inter_results[i - 1])), current_derivative)
 
                 self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(
@@ -127,9 +128,12 @@ class softmax_classifier(object):
 
             for idx, weight_mat in enumerate(self._net_weights):
                 inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
+
                 if idx != len(self._net_weights) - 1:
                     inter_value = act_func(inter_value)
-                if is_return_inter_values: inter_results.append(inter_value)
+
+                if is_return_inter_values: inter_results.append(
+                    inter_value)  # the inter_values are results of activation function
 
             # softmax function result and return
             inter_value = np.exp(inter_value)
