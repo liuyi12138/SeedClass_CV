@@ -229,7 +229,7 @@ if __name__ == "__main__":
             norm_ratio = 0.0001
 
         batch_size = 256
-        learning_rate = 0.002
+        learning_rate = 0.02
         epoch = 100
 
         clsfir = softmax_classifier((3072, 175, 10), norm_ratio, norm_method)
