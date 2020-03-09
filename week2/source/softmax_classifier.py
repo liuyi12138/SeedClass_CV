@@ -65,7 +65,7 @@ class softmax_classifier(object):
                 # activation function setup
                 act_derivative = lambda y: 1
                 if self._activation_method == "relu":
-                    act_derivative = lambda y: np.multiply(y, (y > 0))
+                    act_derivative = lambda y: (y > 0)
                 elif self._activation_method == "tanh":
                     act_derivative = lambda y: 1 - np.multiply(y, y)
 
