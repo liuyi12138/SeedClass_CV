@@ -220,12 +220,22 @@ if __name__ == "__main__":
                 1]))  # print prediction result
     else:
 
-        x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
-        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/data_batch_2")
+        #x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
+        #x_test, y_test = loadOne("../../week1/cifar-10-batches-py/data_batch_2")
+
+        for i in range(1, 6):
+            if i == 1:
+                x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
+            else:
+                x_temp, y_temp = loadOne("../../week1/cifar-10-batches-py/data_batch_" + str(i))
+                x_train = np.concatenate((x_train, x_temp), axis=0)
+                y_train = np.concatenate((y_train, y_temp), axis=0)
+
+        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/test_batch")
         x_train = normalizationImage(x_train)
         x_test = normalizationImage(x_test)
 
-        norm_method = 0
+        norm_method = 1
         norm_ratio = 0
         if norm_method == 1:
             norm_ratio = 0.0002
@@ -233,10 +243,10 @@ if __name__ == "__main__":
             norm_ratio = 0.0001
 
         batch_size = 256
-        learning_rate = 0.02
-        epoch = 100
+        learning_rate = 0.01
+        epoch = 20
 
-        clsfir = softmax_classifier((3072, 175, 10), norm_ratio, norm_method)
+        clsfir = softmax_classifier((3072, 128, 10), norm_ratio, norm_method)
         loss = []
 
         plt.xlabel('Epoch')
@@ -277,3 +287,4 @@ if __name__ == "__main__":
         num_correct = np.sum(result == y_test)  # 计算准确率
         accuracy = float(num_correct) / num_test
         print("acc: %f" % accuracy)
+
