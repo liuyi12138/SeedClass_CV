@@ -275,8 +275,8 @@ if __name__ == "__main__":
             x_train = x_train[permutation]
             y_train = y_train[permutation]
 
-        plt.plot(loss)
-        plt.show()
+            plt.plot(loss)
+            plt.show()
 
         result = []
         for i in range(10000):
