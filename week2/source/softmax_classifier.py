@@ -26,8 +26,8 @@ class softmax_classifier(object):
             for i in range(1, weights_num + 1):
                 weight_range = np.sqrt(6 / (net_layer_shapes[i - 1] + net_layer_shapes[i]))
                 self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layer_shapes[i - 1] + 1,
-                                                                                         net_layer_shapes[
-                                                                                             i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
+                                                                             net_layer_shapes[
+                                                                                 i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
                 self._pending_weights.append(np.zeros((net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
 
         # set up the partial derivatives
@@ -62,18 +62,23 @@ class softmax_classifier(object):
                         loss += self._norm_ratio * norm_derivative_method(weights)
 
                 # activation function setup
-                act_derivative = None
+                act_derivative = lambda x: x
                 if self._activation_method == "relu":
                     act_derivative = lambda x: np.multiply(x, (x > 0))
+                elif self._activation_method == "tanh":
+                    def act_derivative(value):
+                        tmp = np.tanh(value)
+                        return 1 - np.multiply(tmp, tmp)
 
                 # w += (x.T).dot(p-one_hot)
-                current_derivative = act_derivative(np.mat(prob_results - one_hot_tag))
+                current_derivative = np.mat(prob_results - one_hot_tag)
                 for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
                     self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
                         current_derivative
                     ) * learning_rate
-                    current_derivative = act_derivative(current_derivative.dot(
-                        self._net_weights[i][:-1, :].T))  # derivative of those layers
+                    current_derivative = current_derivative.dot(
+                        self._net_weights[i][:-1, :].T)  # derivative of those layers
+                    current_derivative = np.multiply(act_derivative(np.array(inter_results[i - 1])), current_derivative)
 
                 self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(
                     current_derivative) * learning_rate
@@ -114,13 +119,16 @@ class softmax_classifier(object):
             inter_results = []
 
             # activation function setup
-            act_func = None
-            if self._activation_method == 'relu':
+            act_func = lambda x: x
+            if self._activation_method == "relu":
                 act_func = lambda x: np.multiply(x, (x > 0))
+            if self._activation_method == "tanh":
+                act_func = lambda x: np.tanh(x)
 
-            for weight_mat in self._net_weights:
+            for idx, weight_mat in enumerate(self._net_weights):
                 inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
-                inter_value = act_func(inter_value)
+                if idx != len(self._net_weights) - 1:
+                    inter_value = act_func(inter_value)
                 if is_return_inter_values: inter_results.append(inter_value)
 
             # softmax function result and return
@@ -188,18 +196,20 @@ def pca(data_train, data_test, n_components):
 if __name__ == "__main__":
     # tests are written below
     if False:
-        clsfir = softmax_classifier((10, 4, 10), 10, 10)
-        assert clsfir._net_weights[0].shape == (11, 4)
+        learning_rate = 1
+        hidden_size = 100
+        clsfir = softmax_classifier((10, hidden_size, 10), 10, 10)
+        assert clsfir._net_weights[0].shape == (11, hidden_size)
         print("weight matrix shape:", clsfir._net_weights[0].shape)
 
         batch_data = np.eye(10)
         tags = list(range(10))
         print("batch_data: {}, tags: {}".format(batch_data, tags))
 
-        for i in range(100):
+        for i in range(200):
             print("for batch_{}, loss is {} ".format(i,
                                                      clsfir.batch_train(batch_data, tags,
-                                                                        1)))  # print loss when trainiing
+                                                                        learning_rate)))  # print loss when trainiing
 
         for i in range(10):
             print("right answer: {}, prediction: {}".format(i, clsfir.predict(batch_data[i])[
@@ -219,7 +229,7 @@ if __name__ == "__main__":
             norm_ratio = 0.0001
 
         batch_size = 256
-        learning_rate = 0.02
+        learning_rate = 0.002
         epoch = 100
 
         clsfir = softmax_classifier((3072, 175, 10), norm_ratio, norm_method)
