@@ -20,6 +20,7 @@ class softmax_classifier(object):
             self._pending_weights = []  # used to store those to-be-applied weights
             self._norm_ratio = norm_ratio
             self._norm_method = norm_method
+            self._activation_method = "relu"
 
             weights_num = len(net_layer_shapes) - 1
             for i in range(1, weights_num + 1):
@@ -60,14 +61,20 @@ class softmax_classifier(object):
                     for weights in self._net_weights:
                         loss += self._norm_ratio * norm_derivative_method(weights)
 
+                # activation function setup
+                act_derivative = None
+                if self._activation_method == "relu":
+                    act_derivative = lambda x: np.multiply(x, (x > 0))
+
                 # w += (x.T).dot(p-one_hot)
-                current_derivative = np.mat(prob_results - one_hot_tag)
+                current_derivative = act_derivative(np.mat(prob_results - one_hot_tag))
                 for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
                     self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
                         current_derivative
                     ) * learning_rate
-                    current_derivative = current_derivative.dot(
-                        self._net_weights[i][:-1, :].T)  # derivative of those layers
+                    current_derivative = act_derivative(current_derivative.dot(
+                        self._net_weights[i][:-1, :].T))  # derivative of those layers
+
                 self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(
                     current_derivative) * learning_rate
 
@@ -106,8 +113,14 @@ class softmax_classifier(object):
             inter_value = input
             inter_results = []
 
+            # activation function setup
+            act_func = None
+            if self._activation_method == 'relu':
+                act_func = lambda x: np.multiply(x, (x > 0))
+
             for weight_mat in self._net_weights:
                 inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
+                inter_value = act_func(inter_value)
                 if is_return_inter_values: inter_results.append(inter_value)
 
             # softmax function result and return
@@ -138,9 +151,6 @@ class softmax_classifier(object):
         total_loss /= batch_size
         net_loss /= batch_size
         return total_loss, net_loss
-
-
-# 数据集分batch的职责由外部实现
 
 
 def unpickle(filename):
@@ -201,8 +211,7 @@ if __name__ == "__main__":
         x_train = normalizationImage(x_train)
         x_test = normalizationImage(x_test)
 
-        norm_method = 1
-
+        norm_method = 0
         norm_ratio = 0
         if norm_method == 1:
             norm_ratio = 0.0002
