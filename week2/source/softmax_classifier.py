@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 
 
 class softmax_classifier(object):
-    def __init__(self, net_layer_shapes, k, L):
+    def __init__(self, net_layer_shapes, norm_ratio, norm_method):
         self._is_properly_init = True
         # set up the weights and biases
         if len(net_layer_shapes) < 2:
@@ -18,8 +18,8 @@ class softmax_classifier(object):
             self._output_shape = net_layer_shapes[-1]
             self._net_weights = []
             self._pending_weights = []  # used to store those to-be-applied weights
-            self._k = k
-            self._L = L
+            self._norm_ratio = norm_ratio
+            self._norm_method = norm_method
 
             weights_num = len(net_layer_shapes) - 1
             for i in range(1, weights_num + 1):
@@ -47,6 +47,18 @@ class softmax_classifier(object):
                 one_hot_tag = np.zeros(self._output_shape)
                 one_hot_tag[tag] = 1
                 loss = -np.log(np.sum(one_hot_tag * prob_results))
+                net_loss = loss
+
+                # normalization
+                norm_derivative_method = None
+                if self._norm_method == 1:
+                    norm_derivative_method = lambda x: np.sum(np.abs(x))
+                elif self._norm_method == 2:
+                    norm_derivative_method = lambda x: np.sum(x ** 2)
+
+                if norm_derivative_method:
+                    for weights in self._net_weights:
+                        loss += self._norm_ratio * norm_derivative_method(weights)
 
                 # w += (x.T).dot(p-one_hot)
                 current_derivative = np.mat(prob_results - one_hot_tag)
@@ -54,27 +66,31 @@ class softmax_classifier(object):
                     self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
                         current_derivative
                     ) * learning_rate
-                    current_derivative = current_derivative.dot(self._net_weights[i][:-1, :].T)  # derivative of those layers
+                    current_derivative = current_derivative.dot(
+                        self._net_weights[i][:-1, :].T)  # derivative of those layers
                 self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(
                     current_derivative) * learning_rate
 
                 # next
-                return loss
+                return loss, net_loss
 
     def _apply_propagation(self, division, learning_rate):
         """
         apply the temporary parameters updates to the weights and biases
         :param division
         """
+        # normal regularization
+        norm_func = None
+        if self._norm_method == 1:
+            norm_func = lambda x: self._norm_ratio * np.sign(x) * learning_rate
+        elif self._norm_method == 2:
+            norm_func = lambda x: self._norm_ratio * 2 * x * learning_rate
+
         if self._is_properly_init:
             # update all the propagation
             for i in range(len(self._net_weights)):
-                if (self._L == 1):
-                    self._net_weights[i] -= self._k * np.sign(self._net_weights[i]) * learning_rate / len(
-                        self._net_weights[i])  # L1
-                if (self._L == 2):
-                    self._net_weights[i] -= self._k * self._net_weights[i] * learning_rate / len(
-                        self._net_weights[i])  # L2
+                if norm_func:
+                    self._net_weights[i] -= norm_func(self._net_weights[i])
 
                 self._net_weights[i] += self._pending_weights[i] / division
                 self._pending_weights[i] *= 0  # reset the weights to zeros
@@ -110,13 +126,18 @@ class softmax_classifier(object):
             print("Wrong training data!")
             return None
         total_loss = 0
+        net_loss = 0
 
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
-                total_loss += self._back_propagate(input, tags[idx], learning_rate)
+                (total_loss_tmp, net_loss_tmp) = self._back_propagate(input, tags[idx], learning_rate)
+                total_loss += total_loss_tmp
+                net_loss += net_loss_tmp
             self._apply_propagation(batch_size, learning_rate)
+
         total_loss /= batch_size
-        return total_loss
+        net_loss /= batch_size
+        return total_loss, net_loss
 
 
 # 数据集分batch的职责由外部实现
@@ -180,13 +201,19 @@ if __name__ == "__main__":
         x_train = normalizationImage(x_train)
         x_test = normalizationImage(x_test)
 
-        k = 10
-        L = 3
+        norm_method = 1
+
+        norm_ratio = 0
+        if norm_method == 1:
+            norm_ratio = 0.0002
+        elif norm_method == 2:
+            norm_ratio = 0.0001
+
         batch_size = 256
         learning_rate = 0.02
         epoch = 100
 
-        clsfir = softmax_classifier((3072, 175, 10), k, L)
+        clsfir = softmax_classifier((3072, 175, 10), norm_ratio, norm_method)
         loss = []
 
         plt.xlabel('Epoch')
@@ -194,15 +221,22 @@ if __name__ == "__main__":
 
         for i in range(epoch):
             n = 0
-            lossAll = 0
+            loss_all = 0
+            loss_net = 0
             while (n + batch_size < len(x_train)):
                 x_temp = x_train[n: n + batch_size]
                 y_temp = y_train[n: n + batch_size]
-                lossAll += clsfir.batch_train(x_temp, y_temp, learning_rate)
+
+                loss_all_tmp, loss_net_tmp = clsfir.batch_train(x_temp, y_temp, learning_rate)
+                loss_all += loss_all_tmp
+                loss_net += loss_net_tmp
+
                 n += batch_size
-            loss_temp = float(lossAll) / ((n / batch_size) + 1)
-            loss.append(loss_temp)
-            print("for epoch{}, loss is {} ".format(i, loss_temp))
+            loss_present = float(loss_all) / ((n / batch_size) + 1)
+            loss_net_present = float(loss_net) / ((n / batch_size) + 1)
+
+            loss.append(loss_present)
+            print("for epoch{}, loss is {}, net loss is {}".format(i, loss_present, loss_net_present))
 
             permutation = np.random.permutation(y_train.shape[0])
             x_train = x_train[permutation]
