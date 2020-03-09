@@ -231,9 +231,7 @@ if __name__ == "__main__":
                 x_train = np.concatenate((x_train, x_temp), axis=0)
                 y_train = np.concatenate((y_train, y_temp), axis=0)
 
-        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/test_batch")
         x_train = normalizationImage(x_train)
-        x_test = normalizationImage(x_test)
 
         norm_method = 1
         norm_ratio = 0
@@ -278,7 +276,11 @@ if __name__ == "__main__":
             plt.plot(loss)
             plt.show()
 
+        del x_train
         result = []
+        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/test_batch")
+        x_test = normalizationImage(x_test)
+
         for i in range(10000):
             predict = clsfir.predict(x_test[i])[1]
             result.append(predict)
