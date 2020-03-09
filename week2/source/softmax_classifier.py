@@ -230,10 +230,12 @@ if __name__ == "__main__":
                 x_temp, y_temp = loadOne("../../week1/cifar-10-batches-py/data_batch_" + str(i))
                 x_train = np.concatenate((x_train, x_temp), axis=0)
                 y_train = np.concatenate((y_train, y_temp), axis=0)
+        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/test_batch")
 
         x_train = normalizationImage(x_train)
+        x_test = normalizationImage(x_test)
 
-        norm_method = 2
+        norm_method = 0
         norm_ratio = 0
         if norm_method == 1:
             norm_ratio = 0.0002
@@ -267,7 +269,6 @@ if __name__ == "__main__":
             loss_net_present = float(loss_net) / ((n / batch_size) + 1)
 
             loss.append(loss_present)
-            print("for epoch{}, loss is {}, net loss is {}".format(i, loss_present, loss_net_present))
 
             permutation = np.random.permutation(y_train.shape[0])
             x_train = x_train[permutation]
@@ -276,17 +277,13 @@ if __name__ == "__main__":
             plt.plot(loss)
             plt.show()
 
-        del x_train
-        result = []
-        x_test, y_test = loadOne("../../week1/cifar-10-batches-py/test_batch")
-        x_test = normalizationImage(x_test)
+            result = []
+            for j in range(10000):
+                predict = clsfir.predict(x_test[j])[1]
+                result.append(predict)
 
-        for i in range(10000):
-            predict = clsfir.predict(x_test[i])[1]
-            result.append(predict)
+            num_test = 10000
+            num_correct = np.sum(result == y_test)  # 计算准确率
+            accuracy = float(num_correct) / num_test
 
-        num_test = 10000
-        num_correct = np.sum(result == y_test)  # 计算准确率
-        accuracy = float(num_correct) / num_test
-        print("acc: %f" % accuracy)
-
+            print("for epoch{}, loss is {}, net loss is {}, accuracy: {}".format(i, loss_present, loss_net_present, accuracy))
