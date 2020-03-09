@@ -210,7 +210,7 @@ if __name__ == "__main__":
         tags = list(range(10))
         print("batch_data: {}, tags: {}".format(batch_data, tags))
 
-        for i in range(200):
+        for i in range(2000):
             print("for batch_{}, loss is {} ".format(i,
                                                      clsfir.batch_train(batch_data, tags,
                                                                         learning_rate)))  # print loss when trainiing
