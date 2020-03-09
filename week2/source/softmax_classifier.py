@@ -242,7 +242,7 @@ if __name__ == "__main__":
 
         batch_size = 256
         learning_rate = 0.03
-        epoch = 200
+        epoch = 100
 
         clsfir = softmax_classifier((3072, 128, 10), norm_ratio, norm_method)
         loss = []
