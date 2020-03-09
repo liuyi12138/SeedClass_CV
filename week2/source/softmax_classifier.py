@@ -233,12 +233,12 @@ if __name__ == "__main__":
 
         x_train = normalizationImage(x_train)
 
-        norm_method = 1
+        norm_method = 2
         norm_ratio = 0
         if norm_method == 1:
             norm_ratio = 0.0002
         elif norm_method == 2:
-            norm_ratio = 0.0001
+            norm_ratio = 0.01
 
         batch_size = 256
         learning_rate = 0.03
