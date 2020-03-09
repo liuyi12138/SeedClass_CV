@@ -1,5 +1,6 @@
 #!/bin/env python
 import numpy as np
+from data_process import normalization
 
 def numerical_gradient(f, x):
     fx = f(x)
