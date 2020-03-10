@@ -39,7 +39,7 @@ def analytic_grad(w):
 # 验证analytic_grad的正确性
 def verification():
     w = np.array([[0.11,0.2],[0.2,0.53],[0.3,0.14]])
-    print("analytic_grad:       \n", analytic_grad(w))
     print("numerical_gradient:  \n", numerical_gradient(numerical_grad, w))
+    print("analytic_grad:       \n", analytic_grad(w))
 
 verification()
