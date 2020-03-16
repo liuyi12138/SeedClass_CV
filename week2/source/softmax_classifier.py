@@ -246,7 +246,7 @@ if __name__ == "__main__":
         learning_rate = 0.03
         epoch = 100
 
-        clsfir = softmax_classifier((3072, 10), norm_ratio, norm_method)
+        clsfir = softmax_classifier((3072, 128, 10), norm_ratio, norm_method)
         loss = []
 
         plt.xlabel('Epoch')
