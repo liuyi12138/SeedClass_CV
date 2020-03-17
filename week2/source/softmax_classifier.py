@@ -1,6 +1,7 @@
 #!/bin/env python3
 
 import numpy as np
+import cupy as cp
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
