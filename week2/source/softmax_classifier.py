@@ -77,8 +77,9 @@ class softmax_classifier(object):
                         current_derivative
                     ) * learning_rate
                     # derivative of results of activation function, so the biases is ignored here
-                    current_derivative = current_derivative.dot(
-                        self._net_weights[i][:-1, :].T)
+                    current_derivative = current_derivative.dot(self._net_weights[i].T)
+                    current_derivative = current_derivative[:, :-1]
+
                     # derivative of activation function, given function results
                     current_derivative = np.multiply(act_derivative(np.array(inter_results[i - 1])), current_derivative)
 
@@ -198,6 +199,7 @@ def pca(data_train, data_test, n_components):
     return data_train_pca, data_test_pca
 
 
+# %%
 if __name__ == "__main__":
     # tests are written below
     if False:
@@ -221,8 +223,8 @@ if __name__ == "__main__":
                 1]))  # print prediction result
     else:
 
-        #x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
-        #x_test, y_test = loadOne("../../week1/cifar-10-batches-py/data_batch_2")
+        # x_train, y_train = loadOne("../../week1/cifar-10-batches-py/data_batch_1")
+        # x_test, y_test = loadOne("../../week1/cifar-10-batches-py/data_batch_2")
 
         for i in range(1, 6):
             if i == 1:
@@ -243,8 +245,8 @@ if __name__ == "__main__":
         elif norm_method == 2:
             norm_ratio = 0.01
 
-        batch_size = 256
-        learning_rate = 0.03
+        batch_size = 16
+        learning_rate = 0.5
         epoch = 100
 
         clsfir = softmax_classifier((3072, 128, 10), norm_ratio, norm_method)
@@ -255,15 +257,20 @@ if __name__ == "__main__":
 
         for i in range(epoch):
             n = 0
+            j = 0
             loss_all = 0
             loss_net = 0
             while (n + batch_size < len(x_train)):
+                j += 1
                 x_temp = x_train[n: n + batch_size]
                 y_temp = y_train[n: n + batch_size]
 
                 loss_all_tmp, loss_net_tmp = clsfir.batch_train(x_temp, y_temp, learning_rate)
                 loss_all += loss_all_tmp
                 loss_net += loss_net_tmp
+
+                print("for batch_{} of epoch_{}, loss is {}, net loss is {}".format(j, i, loss_all_tmp,
+                                                                                                  loss_net_tmp))
 
                 n += batch_size
             loss_present = float(loss_all) / ((n / batch_size) + 1)
@@ -287,4 +294,5 @@ if __name__ == "__main__":
             num_correct = np.sum(result == y_test)  # 计算准确率
             accuracy = float(num_correct) / num_test
 
-            print("for epoch{}, loss is {}, net loss is {}, accuracy: {}".format(i, loss_present, loss_net_present, accuracy))
+            print("for epoch_{}, loss is {}, net loss is {}, accuracy: {}".format(i, loss_present, loss_net_present,
+                                                                                  accuracy))
