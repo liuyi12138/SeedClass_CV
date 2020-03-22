@@ -1,10 +1,8 @@
 import numpy as np
 # import cupy as np
 import time
-from data_process import loadOne, unpickle, LeakyRelu
+from data_process import loadOne, unpickle, normalization,LeakyRelu
 from matplotlib import pyplot as plt
-from sklearn.decomposition import PCA
-from skimage.feature import hog
 
 
 class softmax_classifier(object):
@@ -161,8 +159,8 @@ class softmax_classifier(object):
         total_loss = 0
         net_loss = 0
 
-        batch_data = batch_data[:5]
-        batch_size = len(batch_data)
+        # batch_data = batch_data[:5]
+        # batch_size = len(batch_data)
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
                 (total_loss_tmp, net_loss_tmp) = self._back_propagate(input, tags[idx], learning_rate)
@@ -174,40 +172,6 @@ class softmax_classifier(object):
         net_loss /= batch_size
         return total_loss, net_loss
 
-
-def normalizationImage(data):
-    data = data.reshape(data.shape[0], 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
-    data = data.reshape(data.shape[0], 3072)
-    data = np.array(data)/255
-    data = data - 0.5
-    return data
-
-def normalization(data):
-    _range = np.max(data) - np.min(data)
-    return (data - np.min(data)) / _range
-
-def pca(data_train, data_test, n_components):
-    pca = PCA(n_components=n_components)
-    pca.fit(data_train)
-    data_train_pca = pca.transform(data_train)
-    data_test_pca = pca.transform(data_test)
-    return data_train_pca, data_test_pca
-
-def Hog(data_train, data_test):
-    figure_data_train = data_train.reshape(len(data_train), 3, 32, 32).transpose(0, 2, 3, 1)
-    data_train_hog = []
-    for i in range(len(data_train)):
-        data_train_hog.append(hog(figure_data_train[i], orientations=12, pixels_per_cell=(8, 8), cells_per_block=(2, 2),
-                               visualize=False))
-    data_train_hog = np.array(data_train_hog)
-
-    figure_data_test = data_test.reshape(len(data_test), 3, 32, 32).transpose(0, 2, 3, 1)
-    data_test_hog = []
-    for i in range(len(data_test)):
-        data_test_hog.append(hog(figure_data_test[i], orientations=12, pixels_per_cell=(8, 8), cells_per_block=(2, 2),
-                              visualize=False))
-    data_test_hog = np.array(data_test_hog)
-    return data_train_hog, data_test_hog
 
 
 
@@ -246,10 +210,10 @@ if norm_method == 1:
 elif norm_method == 2:
     norm_ratio = 0.0001
 
-net_layer_shapes = (3072, 128, 10)
-batch_size = 256
+net_layer_shapes = (3072, 32, 10)
+batch_size = 16
 learning_rate = 0.05
-learning_rate_decay = 0.96
+learning_rate_decay = 0.98
 epoch = 100
 activation = "relu"
 parameter_initializer = "He"
@@ -307,14 +271,19 @@ for i in range(1, epoch+1):
 #     plt.show()
     
 plt.subplot(1,2,1)
+plt.figure(figsize = (6, 4))
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.plot(range(1, epoch+1), loss)
 
 plt.subplot(1,2,2)
+plt.figure(figsize = (6, 4))
 plt.xlabel('Epoch')
 plt.ylabel('Acc')
 plt.plot(range(1, epoch+1), acc)
+
+figname = "../results/test3-remove5.png"
+plt.savefig(figname)
 plt.show()
 
 
