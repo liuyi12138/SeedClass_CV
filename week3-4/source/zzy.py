@@ -23,6 +23,25 @@ class softmax_classifier(object):
             self._activation_method = activation
             self._optimizer = optimizer
 
+            # normal regulation
+            self._norm_func = lambda x: 0
+            self._norm_derivative = lambda x: 0
+            if self._norm_method == 1:
+                self._norm_func = lambda x: np.sum(np.abs(x))
+                self._norm_derivative = lambda x: self._norm_ratio * np.sign(x)
+            elif self._norm_method == 2:
+                self._norm_func = lambda x: np.sum(x ** 2)
+                self._norm_derivative = lambda x: self._norm_ratio * 2 * x
+
+            # activation function setup
+            self._act_func = lambda x: x
+            if self._activation_method == "relu":
+                self._act_func = lambda x: np.multiply(x, (x > 0))
+            if self._activation_method == "tanh":
+                self._act_func = lambda x: np.tanh(x)
+            if self._activation_method == "leaky_relu":
+                self._act_func = LeakyRelu
+
             self._t = 1        # 参数更新的次数
             if self._optimizer == "Momentum":
                 self._m = []   # 保存上一次的动量矩阵，初始为空
@@ -64,21 +83,10 @@ class softmax_classifier(object):
                 one_hot_tag[tag] = 1
                 loss = -np.log(np.sum(one_hot_tag * prob_results))
                 net_loss = loss
-
-                # normal regulation
-                self._norm_func = None
-                self._norm_derivative = lambda x: 0
-                if self._norm_method == 1:
-                    self._norm_func = lambda x: np.sum(np.abs(x))
-                    self._norm_derivative = lambda x: self._norm_ratio * np.sign(x)
-                elif self._norm_method == 2:
-                    self._norm_func = lambda x: np.sum(x ** 2)
-                    self._norm_derivative = lambda x: self._norm_ratio * 2 * x
                 
                 # calculate loss with regulation
-                if self._norm_func:
-                    for weights in self._net_weights:
-                        loss += self._norm_ratio * self._norm_func(weights)      
+                for weights in self._net_weights:
+                    loss += self._norm_ratio * self._norm_func(weights)      
 
                 # activation function setup
                 self._act_derivative = lambda y: 1
@@ -155,30 +163,20 @@ class softmax_classifier(object):
 
     def predict(self, input, is_return_inter_values=False):
         """
-
         :param input: data input
         :param is_return_inter_values: when True, this function returns the intermediate values for back propagation
         :return inter_results stores the intermediate values of those layers except input
         """
         if self._is_properly_init:
             inter_value = input
+            # batch_size = len(inter_value)
             inter_results = []
-
-            # activation function setup
-            self._act_func = lambda x: x
-            if self._activation_method == "relu":
-                self._act_func = lambda x: np.multiply(x, (x > 0))
-            if self._activation_method == "tanh":
-                self._act_func = lambda x: np.tanh(x)
-            if self._activation_method == "leaky_relu":
-                self._act_func = LeakyRelu
 
             for idx, weight_mat in enumerate(self._net_weights):
                 inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
 
                 if idx != len(self._net_weights) - 1:
                     inter_value = self._act_func(inter_value)
-
                 if is_return_inter_values: 
                     inter_results.append(inter_value)  # the inter_values are results of activation function
 
@@ -200,8 +198,8 @@ class softmax_classifier(object):
         total_loss = 0
         net_loss = 0
 
-        # batch_data = batch_data[:5]
-        # batch_size = len(batch_data)
+        batch_data = batch_data[:8]
+        batch_size = len(batch_data)
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
                 (total_loss_tmp, net_loss_tmp) = self._back_propagate(input, tags[idx], learning_rate)
@@ -296,80 +294,82 @@ x_testt,y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalization(x_traint)
 x_test = normalization(x_testt)
 
-shape_list = [(3072,64,10), (3072,32,10), (3072,16,16,10), (3072,64,16,10), (3072,32,32,10)]
-lr_list = [0.01, 0.03, 0.05]
-bat_list = [256, 64, 128]
-init_list = ["Xavier", "He"]
+shape_list = [(3072,64,10)]
+lr_list = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
+bat_list = [64]
+# init_list = ["Xavier"]
+learning_decay_List = [0.933, 0.89, 1]
 
 cnt = 0
 for net_layer_shapes in shape_list:
     for lr in lr_list:
         for batch_size in bat_list:
-            cnt += 1
-            learning_rate = lr
-            print("The %d test start:\n" %cnt)
-            #开始训练
-            norm_method = 0
-            norm_ratio = 0
-            if norm_method == 1:
-                norm_ratio = 0.0002
-            elif norm_method == 2:
-                norm_ratio = 0.0001
+            for learning_rate_decay in learning_decay_List:
+                cnt += 1
+                learning_rate = lr
+                print("The %d test start:\n" %cnt)
+                #开始训练
+                norm_method = 0
+                norm_ratio = 0
+                if norm_method == 1:
+                    norm_ratio = 0.0002
+                elif norm_method == 2:
+                    norm_ratio = 0.0001
 
-            # net_layer_shapes = (3072, 32, 10)
-            # batch_size = 16
-            # learning_rate = 0.05
-            learning_rate_decay = 0.9
-            epoch = 40
-            activation = "relu"
-            parameter_initializer = "Xavier"
-            optimizer = "Momentum"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
+                # net_layer_shapes = (3072, 32, 10)
+                # batch_size = 16
+                # learning_rate = 0.05
+                # learning_rate_decay = 0.9
+                epoch = 40
+                activation = "relu"
+                parameter_initializer = "Xavier"
+                optimizer = "BGD"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
 
-            print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
-                                %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
+                print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.4f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
+                                    %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-            fp = open("../results/log-3.txt", "a+")
-            fp.write("The %d test\n" %cnt)
-            fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
-            fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
-                                %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
+                fp = open("../results/log-3.txt", "a+")
+                fp.write("The %d test\n" %cnt)
+                fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
+                fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
+                                    %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-            clsfir = softmax_classifier(net_layer_shapes = net_layer_shapes,
-                                        norm_ratio = norm_ratio,
-                                        norm_method = norm_method, 
-                                        activation = activation, 
-                                        parameter_initializer = parameter_initializer,
-                                        optimizer = optimizer)
+                clsfir = softmax_classifier(net_layer_shapes = net_layer_shapes,
+                                            norm_ratio = norm_ratio,
+                                            norm_method = norm_method, 
+                                            activation = activation, 
+                                            parameter_initializer = parameter_initializer,
+                                            optimizer = optimizer)
 
-            clsfir.train(x_train = x_train, y_train = y_train,
-                         x_test = x_test, y_test = y_test,
-                         batch_size = batch_size, 
-                         epoch = epoch, 
-                         learning_rate = learning_rate, 
-                         learning_rate_decay = learning_rate_decay,
-                         log_handler = fp,
-                         cnt = cnt)
+                clsfir.train(x_train = x_train, y_train = y_train,
+                            x_test = x_test, y_test = y_test,
+                            batch_size = batch_size, 
+                            epoch = epoch, 
+                            learning_rate = learning_rate, 
+                            learning_rate_decay = learning_rate_decay,
+                            log_handler = fp,
+                            cnt = cnt)
 
-            #训练集
-            result = []
-            for i in range(50000):
-                predict = clsfir.predict(x_train[i])[1]
-                result.append(predict)
-                
-            num_test= 50000
-            num_correct = np.sum(result == y_train) #计算准确率
-            train_accuracy = float(num_correct) / num_test
-            print("train acc: %f" % train_accuracy)
+                #训练集
+                result = []
+                for i in range(50000):
+                    predict = clsfir.predict(x_train[i])[1]
+                    result.append(predict)
+                    
+                num_test= 50000
+                num_correct = np.sum(result == y_train) #计算准确率
+                train_accuracy = float(num_correct) / num_test
+                print("train acc: %f" % train_accuracy)
 
-            #测试集
-            result = []
-            for i in range(10000):
-                predict = clsfir.predict(x_test[i])[1]
-                result.append(predict)
-                
-            num_test= 10000
-            num_correct = np.sum(result == y_test) #计算准确率
-            test_accuracy = float(num_correct) / num_test
-            print("test acc: %f" % test_accuracy)
-            fp.write("train acc: %f, test acc: %f\n\n" %(train_accuracy, test_accuracy))
-            fp.close()
+                #测试集
+                result = []
+                for i in range(10000):
+                    predict = clsfir.predict(x_test[i])[1]
+                    result.append(predict)
+                    
+                num_test= 10000
+                num_correct = np.sum(result == y_test) #计算准确率
+                test_accuracy = float(num_correct) / num_test
+                print("test acc: %f" % test_accuracy)
+                fp.write("train acc: %f, test acc: %f\n\n" %(train_accuracy, test_accuracy))
+                fp.close()
