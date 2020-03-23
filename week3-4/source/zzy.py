@@ -86,6 +86,7 @@ class softmax_classifier(object):
                     self._act_derivative = lambda y: (y > 0)
                 elif self._activation_method == "tanh":
                     self._act_derivative = lambda y: 1 - np.multiply(np.tanh(y), np.tanh(y))
+                    # self._act_derivative = lambda y: 1 - np.multiply(y, y)
                 elif self._activation_method == "leaky_relu":
                     self._act_derivative = LeakyRelu   
 
@@ -295,9 +296,9 @@ x_testt,y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalization(x_traint)
 x_test = normalization(x_testt)
 
-shape_list = [(3072,32,10), (3072,64,10), (3072,16,16,10), (3072,64,16,10), (3072,32,32,10)]
+shape_list = [(3072,64,10), (3072,32,10), (3072,16,16,10), (3072,64,16,10), (3072,32,32,10)]
 lr_list = [0.01, 0.03, 0.05]
-bat_list = [16, 32, 64, 128]
+bat_list = [256, 64, 128]
 init_list = ["Xavier", "He"]
 
 cnt = 0
