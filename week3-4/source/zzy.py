@@ -1,5 +1,5 @@
-import numpy as np
-# import cupy as np
+# import numpy as np
+import cupy as np
 import time
 from data_process import loadOne, unpickle, normalization,LeakyRelu
 from matplotlib import pyplot as plt
@@ -76,7 +76,7 @@ class softmax_classifier(object):
                 # w += (x.T).dot(p-one_hot)
                 current_derivative = np.mat(prob_results - one_hot_tag)
                 for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
-                    self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], [1]))).T.dot(
+                    self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], np.array([1])))).T.dot(
                         current_derivative) * learning_rate
                     # derivative of results of activation function, so the biases is ignored here
                     current_derivative = current_derivative.dot(
@@ -198,8 +198,8 @@ x_testt,y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalization(x_traint)
 x_test = normalization(x_testt)
 
-shape_list = [(3072,16,10), (3072,32,10), (3072,64,10), (3072,16,16,10), (3072,64,16,10), (3072,32,32,10)]
-lr_list = [0.03, 0.05, 0.07]
+shape_list = [(3072,32,10), (3072,64,10), (3072,16,16,10), (3072,64,16,10), (3072,32,32,10)]
+lr_list = [0.01, 0.03, 0.05]
 bat_list = [16, 32, 64, 128]
 init_list = ["Xavier", "He"]
 
@@ -230,7 +230,7 @@ for net_layer_shapes in shape_list:
                 print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
                                     %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-                fp = open("../results/log.txt", "a+")
+                fp = open("../results/log-2.txt", "a+")
                 fp.write("The %d test\n" %cnt)
                 fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
                 fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
@@ -288,7 +288,7 @@ for net_layer_shapes in shape_list:
                 plt.xlabel('Epoch')
                 plt.ylabel('Loss')
                 plt.plot(range(1, epoch+1), loss)
-                loss_figname = "../results/loss_test" + str(cnt) + ".png"
+                loss_figname = "../results/loss_test-2" + str(cnt) + ".png"
                 plt.savefig(loss_figname)
                 plt.close()
 
@@ -296,7 +296,7 @@ for net_layer_shapes in shape_list:
                 plt.xlabel('Epoch')
                 plt.ylabel('Acc')
                 plt.plot(range(1, epoch+1), acc)
-                acc_figname = "../results/acc_test" + str(cnt) + ".png"
+                acc_figname = "../results/acc_test-2" + str(cnt) + ".png"
                 plt.savefig(acc_figname)
                 plt.close()
 
