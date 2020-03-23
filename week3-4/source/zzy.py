@@ -1,5 +1,5 @@
-# import numpy as np
-import cupy as np
+import numpy as np
+# import cupy as np
 import time
 from data_process import loadOne, unpickle, normalization,LeakyRelu
 from matplotlib import pyplot as plt
