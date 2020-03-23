@@ -27,7 +27,7 @@ def load_one(filename):
 def loadOne(filename):
     # load single batch of cifar dataset
     datadict = unpickle(filename)
-    data = datadict[b'data']
+    data = np.array(datadict[b'data'])
     labels = np.array(datadict[b'labels'])
     return data, labels
 
