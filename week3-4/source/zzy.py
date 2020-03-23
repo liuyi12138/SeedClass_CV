@@ -1,7 +1,7 @@
 import numpy as np
 # import cupy as np
 import time
-from data_process import loadOne, unpickle, normalization,LeakyRelu
+from data_process import loadOne, unpickle, normalization, LeakyRelu, Elu
 from matplotlib import pyplot as plt
 
 
@@ -41,6 +41,8 @@ class softmax_classifier(object):
                 self._act_func = lambda x: np.tanh(x)
             if self._activation_method == "leaky_relu":
                 self._act_func = LeakyRelu
+            if self._activation_method == "elu":
+                self._act_func = Elu
 
             self._t = 1        # 参数更新的次数
             if self._optimizer == "Momentum":
@@ -96,7 +98,9 @@ class softmax_classifier(object):
                     self._act_derivative = lambda y: 1 - np.multiply(np.tanh(y), np.tanh(y))
                     # self._act_derivative = lambda y: 1 - np.multiply(y, y)
                 elif self._activation_method == "leaky_relu":
-                    self._act_derivative = LeakyRelu   
+                    self._act_derivative = LeakyRelu_derivative
+                elif self._activation_method == "elu":
+                    self._act_derivative = Elu_derivative
 
                 # w += (x.T).dot(p-one_hot)
                 gradient_mat = []
@@ -198,8 +202,8 @@ class softmax_classifier(object):
         total_loss = 0
         net_loss = 0
 
-        batch_data = batch_data[:8]
-        batch_size = len(batch_data)
+        # batch_data = batch_data[:8]
+        # batch_size = len(batch_data)
         if self._is_properly_init:
             for idx, input in enumerate(batch_data):
                 (total_loss_tmp, net_loss_tmp) = self._back_propagate(input, tags[idx], learning_rate)
@@ -255,7 +259,7 @@ class softmax_classifier(object):
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.plot(range(1, epoch+1), loss)
-        loss_figname = "../results/loss_test-2" + str(cnt) + ".png"
+        loss_figname = "../results/loss_test-latest" + str(cnt) + ".png"
         plt.savefig(loss_figname)
         plt.close()
 
@@ -263,7 +267,7 @@ class softmax_classifier(object):
         plt.xlabel('Epoch')
         plt.ylabel('Acc')
         plt.plot(range(1, epoch+1), acc)
-        acc_figname = "../results/acc_test-2" + str(cnt) + ".png"
+        acc_figname = "../results/acc_test-latest" + str(cnt) + ".png"
         plt.savefig(acc_figname)
         plt.close()
 
@@ -294,9 +298,9 @@ x_testt,y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalization(x_traint)
 x_test = normalization(x_testt)
 
-shape_list = [(3072,64,10)]
+shape_list = [(3072,32,10), (3072,64,10)]
 lr_list = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
-bat_list = [64]
+bat_list = [32,64]
 # init_list = ["Xavier"]
 learning_decay_List = [0.933, 0.89, 1]
 
@@ -304,6 +308,10 @@ cnt = 0
 for net_layer_shapes in shape_list:
     for lr in lr_list:
         for batch_size in bat_list:
+            if net_layer_shapes == (3072,32,10) and batch_size == 32:
+                continue
+            if net_layer_shapes == (3072,64,10) and batch_size == 32:
+                continue
             for learning_rate_decay in learning_decay_List:
                 cnt += 1
                 learning_rate = lr
@@ -320,7 +328,7 @@ for net_layer_shapes in shape_list:
                 # batch_size = 16
                 # learning_rate = 0.05
                 # learning_rate_decay = 0.9
-                epoch = 40
+                epoch = 20
                 activation = "relu"
                 parameter_initializer = "Xavier"
                 optimizer = "BGD"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
@@ -328,7 +336,7 @@ for net_layer_shapes in shape_list:
                 print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.4f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
                                     %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-                fp = open("../results/log-3.txt", "a+")
+                fp = open("../results/log-latest.txt", "a+")
                 fp.write("The %d test\n" %cnt)
                 fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
                 fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 

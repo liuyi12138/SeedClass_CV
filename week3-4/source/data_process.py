@@ -101,3 +101,27 @@ def LeakyRelu(x):
         if(x[i] < 0):
             x[i] *= 0.01
     return x
+
+def LeakyRelu_derivative(x):
+    for i in range(len(x)):
+        if x[i] < 0:
+            x[i] = 0.01
+        else:
+            x[i] = 1
+    return x
+
+def Elu(x):
+    alpha = 1
+    for i in range(len(x)):
+        if x[i] < 0:
+            x[i] = alpha * (np.exp(x[i]) - 1)
+    return x
+
+def Elu_derivative(x):
+    alpha = 1
+    for i in range(len(x)):
+        if x[i] < 0:
+            x[i] = alpha * np.exp(x[i])
+        else:
+            x[i] = 1
+    return x
