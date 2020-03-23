@@ -77,8 +77,7 @@ class softmax_classifier(object):
                         current_derivative
                     ) * learning_rate
                     # derivative of results of activation function, so the biases is ignored here
-                    current_derivative = current_derivative.dot(self._net_weights[i].T)
-                    current_derivative = current_derivative[:, :-1]
+                    current_derivative = current_derivative.dot(self._net_weights[i].T)[:, :-1]
 
                     # derivative of activation function, given function results
                     current_derivative = np.multiply(act_derivative(np.array(inter_results[i - 1])), current_derivative)
@@ -270,7 +269,7 @@ if __name__ == "__main__":
                 loss_net += loss_net_tmp
 
                 print("for batch_{} of epoch_{}, loss is {}, net loss is {}".format(j, i, loss_all_tmp,
-                                                                                                  loss_net_tmp))
+                                                                                    loss_net_tmp))
 
                 n += batch_size
             loss_present = float(loss_all) / ((n / batch_size) + 1)
