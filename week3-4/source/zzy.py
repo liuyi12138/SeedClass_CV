@@ -23,6 +23,16 @@ class softmax_classifier(object):
             self._activation_method = activation
             self._optimizer = optimizer
 
+            self._t = 1        # 参数更新的次数
+            if self._optimizer == "Momentum":
+                self._m = []   # 保存上一次的动量矩阵，初始为空
+                self._u = 0.9  # 动量因子
+            elif self._optimizer == "Adam":
+                self._n = []
+                self._u = 0.9
+                self._v = 0.999
+                self._delta = 1e-8
+
             weights_num = len(net_layer_shapes) - 1
             for i in range(1, weights_num + 1):
                 if parameter_initializer == "Xavier":
@@ -33,7 +43,9 @@ class softmax_classifier(object):
                     self._net_weights.append(np.random.normal(0, 2/net_layer_shapes[i - 1], (net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
                 self._pending_weights.append(np.zeros((net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
 
-        # set up the partial derivatives
+        # 权重矩阵初始化完毕之后转化为numpy array
+        self._net_weights = np.array(self._net_weights)
+        self._pending_weights = np.array(self._pending_weights)
 
     def _back_propagate(self, input, tag, learning_rate):
         """
@@ -53,38 +65,67 @@ class softmax_classifier(object):
                 loss = -np.log(np.sum(one_hot_tag * prob_results))
                 net_loss = loss
 
-                # normalization
-                norm_derivative_method = None
+                # normal regulation
+                self._norm_func = None
+                self._norm_derivative = lambda x: 0
                 if self._norm_method == 1:
-                    norm_derivative_method = lambda x: np.sum(np.abs(x))
+                    self._norm_func = lambda x: np.sum(np.abs(x))
+                    self._norm_derivative = lambda x: self._norm_ratio * np.sign(x)
                 elif self._norm_method == 2:
-                    norm_derivative_method = lambda x: np.sum(x ** 2)
-
-                if norm_derivative_method:
+                    self._norm_func = lambda x: np.sum(x ** 2)
+                    self._norm_derivative = lambda x: self._norm_ratio * 2 * x
+                
+                # calculate loss with regulation
+                if self._norm_func:
                     for weights in self._net_weights:
-                        loss += self._norm_ratio * norm_derivative_method(weights)
+                        loss += self._norm_ratio * self._norm_func(weights)      
 
                 # activation function setup
-                act_derivative = lambda y: 1
+                self._act_derivative = lambda y: 1
                 if self._activation_method == "relu":
-                    act_derivative = lambda y: (y > 0)
+                    self._act_derivative = lambda y: (y > 0)
                 elif self._activation_method == "tanh":
-                    act_derivative = lambda y: 1 - np.multiply(y, y)
+                    self._act_derivative = lambda y: 1 - np.multiply(np.tanh(y), np.tanh(y))
                 elif self._activation_method == "leaky_relu":
-                    act_derivative = LeakyRelu
+                    self._act_derivative = LeakyRelu   
 
                 # w += (x.T).dot(p-one_hot)
+                gradient_mat = []
                 current_derivative = np.mat(prob_results - one_hot_tag)
                 for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
-                    self._pending_weights[i] -= np.mat(np.concatenate((inter_results[i - 1], np.array([1])))).T.dot(
-                        current_derivative) * learning_rate
+                    gradient = np.mat(np.concatenate((inter_results[i - 1], np.array([1])))).T.dot(current_derivative) + self._norm_derivative(self._net_weights[i])
+                    gradient_mat.append(gradient) 
                     # derivative of results of activation function, so the biases is ignored here
-                    current_derivative = current_derivative.dot(
-                        self._net_weights[i][:-1, :].T)
+                    current_derivative = current_derivative.dot(self._net_weights[i][:-1, :].T)
                     # derivative of activation function, given function results
-                    current_derivative = np.multiply(act_derivative(np.array(inter_results[i - 1])), current_derivative)
+                    current_derivative = np.multiply(self._act_derivative(np.array(inter_results[i - 1])), current_derivative)
 
-                self._pending_weights[0] -= np.mat(np.concatenate((input, [1]))).T.dot(current_derivative) * learning_rate
+                gradient = np.mat(np.concatenate((input, [1]))).T.dot(current_derivative) + self._norm_derivative(self._net_weights[0])
+                gradient_mat.append(gradient)
+                gradient_mat = np.array(gradient_mat)[::-1] # append时是倒序，现在修正
+                
+                if self._optimizer == "Momentum":
+                    for i in range(len(gradient_mat)):
+                        if len(self._m) != len(gradient_mat):
+                            self._m.append(gradient_mat[i])
+                        else:
+                            self._m[i] = gradient_mat[i] + self._u * self._m[i]
+                            gradient_mat[i] = self._m[i]
+                elif self._optimizer == "Adam":
+                    for i in range(len(gradient_mat)):
+                        if len(self._m) != len(gradient_mat):
+                            self._m.append((1 - self._u) * gradient_mat[i])
+                            self._n.append((1 - self._v) * (gradient_mat[i] ** 2))
+                        else:
+                            self._m[i] = (1 - self._u) * gradient_mat[i] + self._u * self._m[i]
+                            m_repaired = self._m[i] / (1 - self._u ** self._t)
+                            self._n[i] = (1 - self._v) * (gradient_mat[i] ** 2) + self._v * self._n[i]
+                            n_repaired = self._n[i] / (1 - self._v ** self._t)
+
+                            gradient_mat[i] = m_repaired / (np.sqrt(n_repaired) + self._delta)
+                
+                self._pending_weights -= gradient_mat * learning_rate
+                # self._pending_weights[0] -= gradient * learning_rate
 
                 # next
                 return loss, net_loss
@@ -95,20 +136,21 @@ class softmax_classifier(object):
         :param division
         """
         # normal regularization
-        norm_func = None
-        if self._norm_method == 1:
-            norm_func = lambda x: self._norm_ratio * np.sign(x) * learning_rate
-        elif self._norm_method == 2:
-            norm_func = lambda x: self._norm_ratio * 2 * x * learning_rate
+        # norm_func = None
+        # if self._norm_method == 1:
+        #     norm_func = lambda x: self._norm_ratio * np.sign(x) * learning_rate
+        # elif self._norm_method == 2:
+        #     norm_func = lambda x: self._norm_ratio * 2 * x * learning_rate
 
         if self._is_properly_init:
             # update all the propagation
             for i in range(len(self._net_weights)):
-                if norm_func:
-                    self._net_weights[i] -= norm_func(self._net_weights[i])
+                # if norm_func:
+                #     self._net_weights[i] -= norm_func(self._net_weights[i])
 
                 self._net_weights[i] += self._pending_weights[i] / division
                 self._pending_weights[i] *= 0  # reset the weights to zeros
+            self._t += 1
 
     def predict(self, input, is_return_inter_values=False):
         """
@@ -122,19 +164,19 @@ class softmax_classifier(object):
             inter_results = []
 
             # activation function setup
-            act_func = lambda x: x
+            self._act_func = lambda x: x
             if self._activation_method == "relu":
-                act_func = lambda x: np.multiply(x, (x > 0))
+                self._act_func = lambda x: np.multiply(x, (x > 0))
             if self._activation_method == "tanh":
-                act_func = lambda x: np.tanh(x)
+                self._act_func = lambda x: np.tanh(x)
             if self._activation_method == "leaky_relu":
-                act_func = LeakyRelu
+                self._act_func = LeakyRelu
 
             for idx, weight_mat in enumerate(self._net_weights):
                 inter_value = np.concatenate((inter_value, [1])).dot(weight_mat)
 
                 if idx != len(self._net_weights) - 1:
-                    inter_value = act_func(inter_value)
+                    inter_value = self._act_func(inter_value)
 
                 if is_return_inter_values: 
                     inter_results.append(inter_value)  # the inter_values are results of activation function
@@ -280,12 +322,12 @@ for net_layer_shapes in shape_list:
             epoch = 40
             activation = "relu"
             parameter_initializer = "Xavier"
-            optimizer = "BGD"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
+            optimizer = "Momentum"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
 
             print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
                                 %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-            fp = open("../results/log-2.txt", "a+")
+            fp = open("../results/log-3.txt", "a+")
             fp.write("The %d test\n" %cnt)
             fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
             fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
