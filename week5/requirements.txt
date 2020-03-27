@@ -1,0 +1,3 @@
+tensorflow-gpu = 2.1.0
+cuda = 10.1.0
+cudnn = 9.6.5

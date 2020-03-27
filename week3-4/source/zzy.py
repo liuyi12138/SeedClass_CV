@@ -1,7 +1,7 @@
 import numpy as np
 # import cupy as np
 import time
-from data_process import loadOne, unpickle, normalization, LeakyRelu, Elu
+from data_process import loadOne, unpickle, normalization, LeakyRelu, Elu, LeakyRelu_derivative, Elu_derivative
 from matplotlib import pyplot as plt
 
 
