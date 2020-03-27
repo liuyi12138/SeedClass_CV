@@ -44,13 +44,14 @@ class softmax_classifier(object):
             if self._activation_method == "elu":
                 self._act_func = Elu
 
-            self._t = 1        # 参数更新的次数
+            self._t = 1        # update time
             if self._optimizer == "Momentum":
-                self._m = []   # 保存上一次的动量矩阵，初始为空
-                self._u = 0.9  # 动量因子
+                self._m = []   # save the last momentum
+                self._u = 0.3  # momentum factor
             elif self._optimizer == "Adam":
                 self._n = []
-                self._u = 0.9
+                self._m = []
+                self._u = 0.3
                 self._v = 0.999
                 self._delta = 1e-8
 
@@ -58,10 +59,11 @@ class softmax_classifier(object):
             for i in range(1, weights_num + 1):
                 if parameter_initializer == "Xavier":
                     weight_range = np.sqrt(6 / (net_layer_shapes[i - 1] + net_layer_shapes[i]))
-                    self._net_weights.append(np.random.uniform(-weight_range, weight_range, (net_layer_shapes[i - 1] + 1,
-                                                                                            net_layer_shapes[i])))  # Xavier initialization reference https://zhuanlan.zhihu.com/p/76602243
+                    self._net_weights.append(np.random.uniform(-weight_range, weight_range, (
+                        net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))  # Xavier initialization 
                 elif parameter_initializer == "He":
-                    self._net_weights.append(np.random.normal(0, 2/net_layer_shapes[i - 1], (net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
+                    self._net_weights.append(np.random.normal(0, np.sqrt(np.sqrt(2/net_layer_shapes[i])), 
+                        (net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
                 self._pending_weights.append(np.zeros((net_layer_shapes[i - 1] + 1, net_layer_shapes[i])))
 
         # 权重矩阵初始化完毕之后转化为numpy array
@@ -90,7 +92,7 @@ class softmax_classifier(object):
                 for weights in self._net_weights:
                     loss += self._norm_ratio * self._norm_func(weights)      
 
-                # activation function setup
+                # activation derivative setup
                 self._act_derivative = lambda y: 1
                 if self._activation_method == "relu":
                     self._act_derivative = lambda y: (y > 0)
@@ -106,16 +108,19 @@ class softmax_classifier(object):
                 gradient_mat = []
                 current_derivative = np.mat(prob_results - one_hot_tag)
                 for i in range(-1, -len(self._net_weights), -1):  # totally len(self._net_weights)-1
-                    gradient = np.mat(np.concatenate((inter_results[i - 1], np.array([1])))).T.dot(current_derivative) + self._norm_derivative(self._net_weights[i])
+                    gradient = np.mat(np.concatenate((inter_results[i - 1], np.array([1])))).T.dot(
+                        current_derivative) + self._norm_derivative(self._net_weights[i])
                     gradient_mat.append(gradient) 
                     # derivative of results of activation function, so the biases is ignored here
                     current_derivative = current_derivative.dot(self._net_weights[i][:-1, :].T)
                     # derivative of activation function, given function results
-                    current_derivative = np.multiply(self._act_derivative(np.array(inter_results[i - 1])), current_derivative)
+                    current_derivative = np.multiply(self._act_derivative(np.array(inter_results[i - 1])), 
+                                                     current_derivative)
 
-                gradient = np.mat(np.concatenate((input, [1]))).T.dot(current_derivative) + self._norm_derivative(self._net_weights[0])
+                gradient = np.mat(np.concatenate((input, [1]))).T.dot(
+                    current_derivative) + self._norm_derivative(self._net_weights[0])
                 gradient_mat.append(gradient)
-                gradient_mat = np.array(gradient_mat)[::-1] # append时是倒序，现在修正
+                gradient_mat = np.array(gradient_mat)[::-1] # reverse series
                 
                 if self._optimizer == "Momentum":
                     for i in range(len(gradient_mat)):
@@ -173,7 +178,6 @@ class softmax_classifier(object):
         """
         if self._is_properly_init:
             inter_value = input
-            # batch_size = len(inter_value)
             inter_results = []
 
             for idx, weight_mat in enumerate(self._net_weights):
@@ -298,86 +302,85 @@ x_testt,y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalization(x_traint)
 x_test = normalization(x_testt)
 
-shape_list = [(3072,32,10), (3072,64,10)]
-lr_list = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
-bat_list = [32,64]
-# init_list = ["Xavier"]
-learning_decay_List = [0.933, 0.89, 1]
+shape_list = [(3072,32,10)]
+lr_list = [0.03]
+bat_list = [32]
+init_list = ["Xavier"]
+learning_decay_List = [0.93]
+opt_list = ["Momentum", "Adam"]
 
-cnt = 0
+cnt = 30
 for net_layer_shapes in shape_list:
     for lr in lr_list:
         for batch_size in bat_list:
-            if net_layer_shapes == (3072,32,10) and batch_size == 32:
-                continue
-            if net_layer_shapes == (3072,64,10) and batch_size == 32:
-                continue
             for learning_rate_decay in learning_decay_List:
-                cnt += 1
-                learning_rate = lr
-                print("The %d test start:\n" %cnt)
-                #开始训练
-                norm_method = 0
-                norm_ratio = 0
-                if norm_method == 1:
-                    norm_ratio = 0.0002
-                elif norm_method == 2:
-                    norm_ratio = 0.0001
+                for parameter_initializer in init_list:
+                    for optimizer in opt_list:
+                        cnt += 1
+                        learning_rate = lr
+                        print("\nThe %d test start" %cnt)
+                        #开始训练
+                        norm_method = 0
+                        norm_ratio = 0
+                        if norm_method == 1:
+                            norm_ratio = 0.0002
+                        elif norm_method == 2:
+                            norm_ratio = 0.0001
 
-                # net_layer_shapes = (3072, 32, 10)
-                # batch_size = 16
-                # learning_rate = 0.05
-                # learning_rate_decay = 0.9
-                epoch = 20
-                activation = "relu"
-                parameter_initializer = "Xavier"
-                optimizer = "BGD"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
+                        # net_layer_shapes = (3072, 32, 10)
+                        # batch_size = 16
+                        # learning_rate = 0.05
+                        # learning_rate_decay = 0.9
+                        epoch = 50
+                        activation = "relu"
+                        # parameter_initializer = "Xavier"
+                        # optimizer = "BGD"               # GD, BGD, SGD, Momentum, AdaGrad, Adam
 
-                print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.4f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
-                                    %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
+                        print("net_shape = ", net_layer_shapes, "batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.4f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
+                                            %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-                fp = open("../results/log-latest.txt", "a+")
-                fp.write("The %d test\n" %cnt)
-                fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
-                fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
-                                    %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
+                        fp = open("../results/log-latest.txt", "a+")
+                        fp.write("\nThe %d test:\n" %cnt)
+                        fp.write("net_shape = (%d %d %d)" %(net_layer_shapes[0], net_layer_shapes[1], net_layer_shapes[2]))
+                        fp.write(", batch_size = %d, epoch = %d\nnorm_method = %d, norm_ratio = %.5f\nlearning_rate = %.3f, learning_decay = %.3f\nactivation = %s, para_initializer = %s, optimizer = %s\n" 
+                                            %(batch_size, epoch, norm_method, norm_ratio, learning_rate, learning_rate_decay, activation, parameter_initializer, optimizer))
 
-                clsfir = softmax_classifier(net_layer_shapes = net_layer_shapes,
-                                            norm_ratio = norm_ratio,
-                                            norm_method = norm_method, 
-                                            activation = activation, 
-                                            parameter_initializer = parameter_initializer,
-                                            optimizer = optimizer)
+                        clsfir = softmax_classifier(net_layer_shapes = net_layer_shapes,
+                                                    norm_ratio = norm_ratio,
+                                                    norm_method = norm_method, 
+                                                    activation = activation, 
+                                                    parameter_initializer = parameter_initializer,
+                                                    optimizer = optimizer)
 
-                clsfir.train(x_train = x_train, y_train = y_train,
-                            x_test = x_test, y_test = y_test,
-                            batch_size = batch_size, 
-                            epoch = epoch, 
-                            learning_rate = learning_rate, 
-                            learning_rate_decay = learning_rate_decay,
-                            log_handler = fp,
-                            cnt = cnt)
+                        clsfir.train(x_train = x_train, y_train = y_train,
+                                    x_test = x_test, y_test = y_test,
+                                    batch_size = batch_size, 
+                                    epoch = epoch, 
+                                    learning_rate = learning_rate, 
+                                    learning_rate_decay = learning_rate_decay,
+                                    log_handler = fp,
+                                    cnt = cnt)
 
-                #训练集
-                result = []
-                for i in range(50000):
-                    predict = clsfir.predict(x_train[i])[1]
-                    result.append(predict)
-                    
-                num_test= 50000
-                num_correct = np.sum(result == y_train) #计算准确率
-                train_accuracy = float(num_correct) / num_test
-                print("train acc: %f" % train_accuracy)
+                        #训练集
+                        result = []
+                        for i in range(50000):
+                            predict = clsfir.predict(x_train[i])[1]
+                            result.append(predict)
+                            
+                        num_test= 50000
+                        num_correct = np.sum(result == y_train) #计算准确率
+                        train_accuracy = float(num_correct) / num_test
+                        print("train acc: %f" % train_accuracy)
 
-                #测试集
-                result = []
-                for i in range(10000):
-                    predict = clsfir.predict(x_test[i])[1]
-                    result.append(predict)
-                    
-                num_test= 10000
-                num_correct = np.sum(result == y_test) #计算准确率
-                test_accuracy = float(num_correct) / num_test
-                print("test acc: %f" % test_accuracy)
-                fp.write("train acc: %f, test acc: %f\n\n" %(train_accuracy, test_accuracy))
-                fp.close()
+                        #测试集
+                        result = []
+                        for i in range(10000):
+                            predict = clsfir.predict(x_test[i])[1]
+                            result.append(predict)
+                            
+                        num_test= 10000
+                        num_correct = np.sum(result == y_test) #计算准确率
+                        test_accuracy = float(num_correct) / num_test
+                        print("test acc: %f" % test_accuracy)
+                        fp.write("train acc: %f, test acc: %f\n\n" %(train_accuracy, test_accuracy))
+                        fp.close()
