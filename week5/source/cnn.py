@@ -4,6 +4,9 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, models, optimizers
 
+# 屏蔽tf的通知信息、警告信息 (如果设置为3，则还屏蔽报错信息)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 def unpickle(filename):
     """
     data_dict: a object consists of data and labels
@@ -27,7 +30,7 @@ def normalizationImage(data):
     data = data - 0.5
     return data
 
-def OneHogY(data):
+def oneHotY(data):
     one_hot_data = []
     for i in range(len(data)):
         one_hot_temp = np.zeros(10)
@@ -48,30 +51,30 @@ x_test, y_test = loadOne("../../../cifar-10-batches-py/test_batch")
 x_train = normalizationImage(x_train)
 x_test = normalizationImage(x_test)
 
-y_train = OneHogY(y_train)
-y_test = OneHogY(y_test)
+y_train = oneHotY(y_train)
+y_test = oneHotY(y_test)
 
 # 网络模型参考 https://geektutu.com/post/tf2doc-cnn-cifar10.html
 # Conv2D 网络层 MaxPooling2D 池化层 Dense 全连接层
 model = models.Sequential()
-model.add(layers.Conv2D(32, (5, 5), activation='relu', input_shape=(32, 32, 3))) #输出为[28,28，32]
-model.add(layers.MaxPooling2D((2, 2))) #输出为[14,14，32]
-model.add(layers.Conv2D(64, (5, 5), activation='relu')) #输出为[10,10，64]
+model.add(layers.Conv2D(32, (5, 5), activation='relu', input_shape=(32, 32, 3))) #输出为[28,28,32]
+model.add(layers.MaxPooling2D((2, 2))) #输出为[14,14,32]
+model.add(layers.Conv2D(64, (5, 5), activation='relu')) #输出为[10,10,64]
 model.add(layers.MaxPooling2D((2, 2))) #输出为[5,5，64]
-model.add(layers.Conv2D(64, (5, 5), activation='relu')) #输出为[1,1，64]
+model.add(layers.Conv2D(64, (5, 5), activation='relu')) #输出为[1,1,64]
 model.add(layers.Flatten()) #输出为[64]
 model.add(layers.Dense(32, activation='relu')) #输出为[32]
 model.add(layers.Dense(10, activation='softmax')) #输出为[10]
 model.summary()
 
 # 优化器 目标函数等参考 https://keras-cn.readthedocs.io/en/latest/legacy/other/optimizers/
-sgd = optimizers.SGD(lr=2e-4, decay=0.9, momentum=0.0, nesterov=False)
-adam = keras.optimizers.Adamax(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+sgd = optimizers.SGD(lr=0.0001, decay=0.93, momentum=0.3, nesterov=False)
+adam = keras.optimizers.Adamax(lr=0.0015, beta_1=0.7, beta_2=0.998, epsilon=1e-08)
  #优化器sgd 目标函数为softmax+对数损失
 model.compile(optimizer=adam,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=20)
+model.fit(x_train, y_train, epochs=15)
 
 test_loss, test_acc = model.evaluate(x_test, y_test)
 test_acc
