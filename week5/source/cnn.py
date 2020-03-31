@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, models, optimizers
+from tensorflow.keras import layers, models, optimizers,initializers
+from tensorflow.keras.callbacks import TensorBoard
 
 # 屏蔽tf的通知信息、警告信息 (如果设置为3，则还屏蔽报错信息)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -30,7 +31,6 @@ def normalizationImage(data):
     data = data - 0.5
     return data
 
-
 for i in range(1, 6):
     if i == 1:
         x_train, y_train = loadOne("../../../cifar-10-batches-py/data_batch_1")
@@ -49,10 +49,10 @@ y_test = keras.utils.to_categorical(y_test, 10)
 train_datagen = keras.preprocessing.image.ImageDataGenerator(
     featurewise_center=True,
     featurewise_std_normalization=True,
-    rotation_range=20,
-    width_shift_range=0.16,
-    height_shift_range=0.16,
-    zoom_range=0.2,
+    rotation_range=30,
+    width_shift_range=0.12,
+    height_shift_range=0.12,
+    zoom_range=0.12,
     rescale=1./255,
     horizontal_flip=True)
 
@@ -61,8 +61,11 @@ test_datagen = keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 
 # 网络模型参考 https://geektutu.com/post/tf2doc-cnn-cifar10.html
 # Conv2D 卷积层 MaxPooling2D 池化层 Dense 全连接层
+# Conv2D 卷积层 MaxPooling2D 池化层 Dense 全连接层
 model = models.Sequential()
 model.add(layers.BatchNormalization(input_shape=(32, 32, 3), axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
+model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
+model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
 model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
 model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
 model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
@@ -74,6 +77,8 @@ model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, cente
 model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
 model.add(layers.MaxPooling2D((2, 2))) 
 
+model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
+model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
 model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
 model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=initializers.glorot_uniform(seed=None)))
 model.add(layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
@@ -98,15 +103,14 @@ model.summary()
 keras.utils.plot_model(model, show_shapes = True, show_layer_names = True)
 
 # 优化器 目标函数等参考 https://keras-cn.readthedocs.io/en/latest/legacy/other/optimizers/
-sgd = optimizers.SGD(lr=0.0001, decay=0.93, momentum=0.3, nesterov=False)
-adamMax = keras.optimizers.Adamax(lr=0.0015, beta_1=0.7, beta_2=0.998, epsilon=1e-08)
 adam = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-m_batch_size = 32
- #优化器adam 目标函数为softmax+对数损失
 model.compile(optimizer=adam,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
-model.fit_generator(train_datagen.flow(x_train,y_train,batch_size=m_batch_size),steps_per_epoch=int(len(x_train)/m_batch_size), epochs=20)
-
+m_batch_size = 32
+m_lr = 0.0001
+model.fit_generator(train_datagen.flow(x_train,y_train,batch_size=m_batch_size),steps_per_epoch=int(len(x_train)/m_batch_size), epochs=300)
 test_loss, test_acc = model.evaluate_generator(test_datagen.flow(x_test, y_test))
-test_acc
+AllLoss.append(test_loss)
+AllAcc.append(test_acc)
+print("for batch_size = %d, lr = %f, loss: %f, acc: %f\n" % (m_batch_size, m_lr, test_loss, test_acc))
