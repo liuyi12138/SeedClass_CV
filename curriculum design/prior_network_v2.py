@@ -253,131 +253,132 @@ def show_samples(np_imgs):
   plt.imshow(merge_img,plt.cm.gray)
 
 # data process
-(x_train, y_train), (x_test, y_test)=tf.keras.datasets.mnist.load_data()
-hr_images = []
-for i in range(len(x_train)):
-    if y_train[i] == 8:
-        hr_images.append(x_train[i])
-hr_images = np.array(hr_images)
+if __name__ == '__main__':
+  (x_train, y_train), (x_test, y_test)=tf.keras.datasets.mnist.load_data()
+  hr_images = []
+  for i in range(len(x_train)):
+      if y_train[i] == 3:
+          hr_images.append(x_train[i])
+  hr_images = np.array(hr_images)
 
-lr_images = []
-for i in range(len(hr_images)):
-    lr_images.append(transform.resize(hr_images[i], (7, 7)))
-lr_images = np.array(lr_images)
+  lr_images = []
+  for i in range(len(hr_images)):
+      lr_images.append(transform.resize(hr_images[i], (7, 7)))
+  lr_images = np.array(lr_images)
 
-hr_images = np.resize(hr_images,(hr_images.shape[0],28,28,1))
-lr_images = np.resize(lr_images,(lr_images.shape[0],7,7,1))
-hr_images = hr_images.astype(float)
-lr_images = lr_images.astype(float)
+  hr_images = np.resize(hr_images,(hr_images.shape[0],28,28,1))
+  lr_images = np.resize(lr_images,(lr_images.shape[0],7,7,1))
+  hr_images = hr_images.astype(float)
+  lr_images = lr_images.astype(float)
 
-# model construction
-xs = tf.compat.v1.placeholder(float, [None, 28, 28, 1])
-ys = tf.compat.v1.placeholder(float, [None, 7, 7, 1])
-net = Net(xs, ys, 'prsr')
+  # model construction
+  xs = tf.compat.v1.placeholder(float, [None, 28, 28, 1])
+  ys = tf.compat.v1.placeholder(float, [None, 7, 7, 1])
+  net = Net(xs, ys, 'prsr')
 
-# parameters
-epoch = 300
-learning_rate = 4e-4
-batch_size = 32
-global_step = tf.compat.v1.get_variable('global_step', [], initializer=tf.compat.v1.constant_initializer(0), trainable=False)
-learning_rate_decay = tf.compat.v1.train.exponential_decay(learning_rate, global_step,
-                                   500000, 0.5, staircase=True)
-optimizer = tf.compat.v1.train.RMSPropOptimizer(learning_rate_decay, decay=0.95, momentum=0.9, epsilon=1e-8)
-train_op = optimizer.minimize(net.loss, global_step=global_step)
+  # parameters
+  epoch = 300
+  learning_rate = 4e-4
+  batch_size = 32
+  global_step = tf.compat.v1.get_variable('global_step', [], initializer=tf.compat.v1.constant_initializer(0), trainable=False)
+  learning_rate_decay = tf.compat.v1.train.exponential_decay(learning_rate, global_step,
+                                    500000, 0.5, staircase=True)
+  optimizer = tf.compat.v1.train.RMSPropOptimizer(learning_rate_decay, decay=0.95, momentum=0.9, epsilon=1e-8)
+  train_op = optimizer.minimize(net.loss, global_step=global_step)
 
-init_op = tf.group(tf.compat.v1.global_variables_initializer(), tf.compat.v1.local_variables_initializer())
-summary_op = tf.compat.v1.summary.merge_all()
-saver = tf.compat.v1.train.Saver()
-config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
-config.gpu_options.allow_growth = True
-sess = tf.compat.v1.Session(config=config)
-sess.run(init_op)
-coord = tf.train.Coordinator()
-threads = tf.compat.v1.train.start_queue_runners(sess=sess, coord=coord)
+  init_op = tf.group(tf.compat.v1.global_variables_initializer(), tf.compat.v1.local_variables_initializer())
+  summary_op = tf.compat.v1.summary.merge_all()
+  saver = tf.compat.v1.train.Saver()
+  config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
+  config.gpu_options.allow_growth = True
+  sess = tf.compat.v1.Session(config=config)
+  sess.run(init_op)
+  coord = tf.train.Coordinator()
+  threads = tf.compat.v1.train.start_queue_runners(sess=sess, coord=coord)
 
-# train
-Loss = []
-with tf.device('/gpu:0'):
-    epochIters = 0
-    mu=1.1
-    while not coord.should_stop() and epochIters <= epoch:
-        # Run training steps or whatever
-        batchIters = 1
-        while batchIters*batch_size <= len(hr_images):
-            temp_hr_images = hr_images[(batchIters-1)*batch_size:batchIters*batch_size]
-            temp_lr_images = lr_images[(batchIters-1)*batch_size:batchIters*batch_size]
-            t1 = time.time()
-            _, loss = sess.run([train_op, net.loss], feed_dict={xs: temp_hr_images, ys: temp_lr_images, net.train: True})
-            t2 = time.time()
-            if(batchIters % 30 == 0):
-                print('epoch %d batch %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)' % ((epochIters, batchIters, loss, batch_size/(t2-t1), (t2-t1))))
-                Loss.append(loss)
-            batchIters += 1
-            
-        epochIters += 1
-        permutation = np.random.permutation(hr_images.shape[0])
-        hr_images = hr_images[permutation, :, :, :]
-        lr_images = lr_images[permutation, :, :, :]
+  # train
+  Loss = []
+  with tf.device('/gpu:0'):
+      epochIters = 0
+      mu=1.1
+      while not coord.should_stop() and epochIters <= epoch:
+          # Run training steps or whatever
+          batchIters = 1
+          while batchIters*batch_size <= len(hr_images):
+              temp_hr_images = hr_images[(batchIters-1)*batch_size:batchIters*batch_size]
+              temp_lr_images = lr_images[(batchIters-1)*batch_size:batchIters*batch_size]
+              t1 = time.time()
+              _, loss = sess.run([train_op, net.loss], feed_dict={xs: temp_hr_images, ys: temp_lr_images, net.train: True})
+              t2 = time.time()
+              if(batchIters % 30 == 0):
+                  print('epoch %d batch %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)' % ((epochIters, batchIters, loss, batch_size/(t2-t1), (t2-t1))))
+                  Loss.append(loss)
+              batchIters += 1
+              
+          epochIters += 1
+          permutation = np.random.permutation(hr_images.shape[0])
+          hr_images = hr_images[permutation, :, :, :]
+          lr_images = lr_images[permutation, :, :, :]
 
-        if epochIters > epoch:
-            coord.request_stop()
+          if epochIters > epoch:
+              coord.request_stop()
 
 
-plt.plot(Loss)
-plt.show()
+  plt.plot(Loss)
+  plt.show()
 
-# build test
-test_hr_images = []
-for i in range(len(x_test)):
-    if y_test[i] == 3:
-        test_hr_images.append(x_test[i])
-test_hr_images = np.array(test_hr_images)
+  # build test
+  test_hr_images = []
+  for i in range(len(x_test)):
+      if y_test[i] == 3:
+          test_hr_images.append(x_test[i])
+  test_hr_images = np.array(test_hr_images)
 
-test_lr_images = []
-for i in range(len(test_hr_images)):
-    test_lr_images.append(transform.resize(test_hr_images[i], (7, 7)))
-test_lr_images = np.array(test_lr_images)
+  test_lr_images = []
+  for i in range(len(test_hr_images)):
+      test_lr_images.append(transform.resize(test_hr_images[i], (7, 7)))
+  test_lr_images = np.array(test_lr_images)
 
-test_hr_images = np.resize(test_hr_images,(test_hr_images.shape[0],28,28,1))
-test_lr_images = np.resize(test_lr_images,(test_lr_images.shape[0],7,7,1))
-test_hr_images = test_hr_images.astype(float)
-test_lr_images = test_lr_images.astype(float)
+  test_hr_images = np.resize(test_hr_images,(test_hr_images.shape[0],28,28,1))
+  test_lr_images = np.resize(test_lr_images,(test_lr_images.shape[0],7,7,1))
+  test_hr_images = test_hr_images.astype(float)
+  test_lr_images = test_lr_images.astype(float)
 
-# predict test
-c_logits = net.conditioning_logits
-lr_imgs = test_lr_images[0:32]
-hr_imgs = test_hr_images[0:32]
-#np_hr_imgs, np_lr_imgs = sess.run([hr_imgs_tf, lr_imgs_tf])
-gen_hr_imgs = np.zeros((batch_size, 28, 28, 1), dtype=np.float32)
-#gen_hr_imgs = np_hr_imgs
-#gen_hr_imgs[:,16:,16:,:] = 0.0
-np_c_logits = sess.run(c_logits, feed_dict={xs: hr_imgs, ys: lr_imgs, net.train:False})
-for i in range(28):
-  for j in range(28):
-    for c in range(1):
-      new_pixel = logits_2_pixel_value(np_c_logits[:, i, j, c*256:(c+1)*256], mu=mu)
-      gen_hr_imgs[:, i, j, c] = new_pixel
+  # predict test
+  c_logits = net.conditioning_logits
+  lr_imgs = test_lr_images[0:32]
+  hr_imgs = test_hr_images[0:32]
+  #np_hr_imgs, np_lr_imgs = sess.run([hr_imgs_tf, lr_imgs_tf])
+  gen_hr_imgs = np.zeros((batch_size, 28, 28, 1), dtype=np.float32)
+  #gen_hr_imgs = np_hr_imgs
+  #gen_hr_imgs[:,16:,16:,:] = 0.0
+  np_c_logits = sess.run(c_logits, feed_dict={xs: hr_imgs, ys: lr_imgs, net.train:False})
+  for i in range(28):
+    for j in range(28):
+      for c in range(1):
+        new_pixel = logits_2_pixel_value(np_c_logits[:, i, j, c*256:(c+1)*256], mu=mu)
+        gen_hr_imgs[:, i, j, c] = new_pixel
 
-# output all
-plt.subplot(1, 3, 1)
-show_samples(hr_imgs)
-plt.subplot(1, 3, 2)
-show_samples(lr_imgs)
-plt.subplot(1, 3, 3)
-show_samples(gen_hr_imgs)
+  # output all
+  plt.subplot(1, 3, 1)
+  show_samples(hr_imgs)
+  plt.subplot(1, 3, 2)
+  show_samples(lr_imgs)
+  plt.subplot(1, 3, 3)
+  show_samples(gen_hr_imgs)
 
-# output single
-index = 7
-hr_imgg = gen_hr_imgs[index]
-lr_imgt = test_lr_images[index]
-hr_imgt = test_hr_images[index]
-hr_imgg = np.resize(hr_imgg,(28,28))
-hr_imgt = np.resize(hr_imgt,(28,28))
-lr_imgt = np.resize(lr_imgt,(7,7))
+  # output single
+  index = 7
+  hr_imgg = gen_hr_imgs[index]
+  lr_imgt = test_lr_images[index]
+  hr_imgt = test_hr_images[index]
+  hr_imgg = np.resize(hr_imgg,(28,28))
+  hr_imgt = np.resize(hr_imgt,(28,28))
+  lr_imgt = np.resize(lr_imgt,(7,7))
 
-plt.subplot(1, 3, 1)
-plt.imshow(hr_imgt,plt.cm.gray)
-plt.subplot(1, 3, 2)
-plt.imshow(lr_imgt,plt.cm.gray)
-plt.subplot(1, 3, 3)
-plt.imshow(hr_imgg,plt.cm.gray)
+  plt.subplot(1, 3, 1)
+  plt.imshow(hr_imgt,plt.cm.gray)
+  plt.subplot(1, 3, 2)
+  plt.imshow(lr_imgt,plt.cm.gray)
+  plt.subplot(1, 3, 3)
+  plt.imshow(hr_imgg,plt.cm.gray)
