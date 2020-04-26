@@ -179,7 +179,8 @@ class Net(object):
       conv1 = conv2d(hr_images, 64, [7, 7], strides=[1, 1], mask_type='A', scope="conv1")
       inputs = conv1
       state = conv1
-      for i in range(20):
+      #for i in range(20):
+      for i in range(5):
         inputs, state = gated_conv2d(inputs, state, [5, 5], scope='gated' + str(i))
       conv2 = conv2d(inputs, 1024, [1, 1], strides=[1, 1], mask_type='B', scope="conv2")
       conv2 = tf.nn.relu(conv2)
