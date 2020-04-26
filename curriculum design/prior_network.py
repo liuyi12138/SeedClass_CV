@@ -183,9 +183,10 @@ class Net(object):
         inputs, state = gated_conv2d(inputs, state, [5, 5], scope='gated' + str(i))
       conv2 = conv2d(inputs, 1024, [1, 1], strides=[1, 1], mask_type='B', scope="conv2")
       conv2 = tf.nn.relu(conv2)
-      prior_logits = conv2d(conv2, 3 * 256, [1, 1], strides=[1, 1], mask_type='B', scope="conv3")
+      prior_logits = conv2d(conv2, 256, [1, 1], strides=[1, 1], mask_type='B', scope="conv3")
+      # prior_logits = conv2d(conv2, 3 * 256, [1, 1], strides=[1, 1], mask_type='B', scope="conv3")
 
-      prior_logits = tf.concat([prior_logits[:, :, :, 0::3], prior_logits[:, :, :, 1::3], prior_logits[:, :, :, 2::3]], 3)
+      # prior_logits = tf.concat([prior_logits[:, :, :, 0::3], prior_logits[:, :, :, 1::3], prior_logits[:, :, :, 2::3]], 3)
 
       return prior_logits
 
@@ -234,8 +235,8 @@ class Net(object):
     # self.loss = self.softmax_loss(self.prior_logits+self.prior_logits, labels)
     loss1 = self.softmax_loss(self.prior_logits, labels)
     # loss1 = 0
-    loss2 = self.softmax_loss(self.conditioning_logits, labels)
-    self.loss = loss1 + loss2
+    # loss2 = self.softmax_loss(self.conditioning_logits, labels)
+    self.loss = loss1
 
     tf.summary.scalar('loss', self.loss)
 
