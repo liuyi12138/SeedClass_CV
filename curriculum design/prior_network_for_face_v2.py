@@ -264,7 +264,7 @@ def load_dataset(data_path, train_test_ratio):
   print('loading faces ({} x {}) ...'.format(result_size, result_size))
   for image_name in tqdm(os.listdir(image_path)):
     if image_name.endswith(".jpg"):
-      img = np.resize(Image.open(os.path.join(image_path, image_name)).convert('L'), (result_size, result_size, 1)) # reducing memory footprint
+      img = np.array(Image.open(os.path.join(image_path, image_name)).convert('L').resize(result_size, result_size)) # reducing memory footprint
       data.append(img)
 
   train_length = int(len(data)*train_test_ratio/(train_test_ratio+1))
