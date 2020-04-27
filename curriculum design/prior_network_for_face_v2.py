@@ -186,9 +186,9 @@ class Net(object):
         inputs, state = gated_conv2d(inputs, state, [5, 5], scope='gated' + str(i))
       conv2 = conv2d(inputs, 1024, [1, 1], strides=[1, 1], mask_type='B', scope="conv2")
       conv2 = tf.nn.relu(conv2)
-      prior_logits = conv2d(conv2, 256, [1, 1], strides=[1, 1], mask_type='B', scope="conv3")
+      prior_logits = conv2d(conv2, 3*256, [1, 1], strides=[1, 1], mask_type='B', scope="conv3")
 
-      #prior_logits = tf.concat([prior_logits[:, :, :, 0::3], prior_logits[:, :, :, 1::3], prior_logits[:, :, :, 2::3]], 3)
+      prior_logits = tf.concat([prior_logits[:, :, :, 0::3], prior_logits[:, :, :, 1::3], prior_logits[:, :, :, 2::3]], 3)
 
       return prior_logits
 
@@ -210,7 +210,7 @@ class Net(object):
         inputs = tf.nn.relu(inputs)
       for i in range(res_num):
         inputs = resnet_block(inputs, 32, [3, 3], strides=[1, 1], scope='res3' + str(i), train=self.train)
-      conditioning_logits = conv2d(inputs, 256, [1, 1], strides=[1, 1], mask_type=None, scope="conv")
+      conditioning_logits = conv2d(inputs, 3*256, [1, 1], strides=[1, 1], mask_type=None, scope="conv")
 
       return conditioning_logits
 
@@ -228,14 +228,19 @@ class Net(object):
     #labels
     labels = hr_images
     #normalization images [-0.5, 0.5]
-    hr_images = hr_images / 255.0 - 0.5
-    lr_images = lr_images / 255.0 - 0.5
-    # self.conditioning_logits = self.conditioning_network(lr_images)
-    self.prior_logits = self.prior_network(hr_images)
+    hr_images = hr_images - 0.5
+    lr_images = lr_images - 0.5
+    #self.prior_logits = self.prior_network(hr_images)
+    self.conditioning_logits = self.conditioning_network(lr_images)
 
-    self.loss = self.softmax_loss(self.prior_logits, labels)
+    #loss1 = self.softmax_loss(self.prior_logits + self.conditioning_logits, labels)
+    loss2 = self.softmax_loss(self.conditioning_logits, labels)
+    #loss3 = self.softmax_loss(self.prior_logits, labels)
+
+    self.loss = loss2
 
     tf.compat.v1.summary.scalar('loss', self.loss)
+    #tf.compat.v1.summary.scalar('loss_prior', loss3)
 
 def show_samples(np_imgs):
   """
@@ -264,7 +269,7 @@ def load_dataset(data_path, train_test_ratio):
   print('loading faces ({} x {}) ...'.format(result_size, result_size))
   for image_name in tqdm(os.listdir(image_path)):
     if image_name.endswith(".jpg"):
-      img = np.array(Image.open(os.path.join(image_path, image_name)).convert('L').resize(result_size, result_size)) # reducing memory footprint
+      img = np.array(Image.open(os.path.join(image_path, image_name)).resize(result_size, result_size)) # reducing memory footprint
       data.append(img)
 
   train_length = int(len(data)*train_test_ratio/(train_test_ratio+1))
@@ -278,17 +283,18 @@ if __name__ == '__main__':
 
   lr_images = []
   for i in range(len(hr_images)):
-      lr_images.append(transform.resize(hr_images[i], (7, 7)))
+    lr_images.append(transform.resize(hr_images[i], (8, 8, 3)))
   lr_images = np.array(lr_images)
 
-  hr_images = np.resize(hr_images,(hr_images.shape[0],28,28,1))
-  lr_images = np.resize(lr_images,(lr_images.shape[0],7,7,1))
+  hr_images = np.resize(hr_images,(hr_images.shape[0],32,32,3))
+  lr_images = np.resize(lr_images,(lr_images.shape[0],8,8,3))
+  hr_images = hr_images/255.
   hr_images = hr_images.astype(float)
   lr_images = lr_images.astype(float)
 
   # model construction
-  xs = tf.compat.v1.placeholder(float, [None, 28, 28, 1])
-  ys = tf.compat.v1.placeholder(float, [None, 7, 7, 1])
+  xs = tf.compat.v1.placeholder(float, [None, 32, 32, 3])
+  ys = tf.compat.v1.placeholder(float, [None, 8, 8, 3])
   net = Net(xs, ys, 'prsr')
 
   # parameters
@@ -348,29 +354,38 @@ if __name__ == '__main__':
 
   test_lr_images = []
   for i in range(len(test_hr_images)):
-      test_lr_images.append(transform.resize(test_hr_images[i], (7, 7)))
+    test_lr_images.append(transform.resize(test_hr_images[i], (8, 8, 3)))
   test_lr_images = np.array(test_lr_images)
 
-  test_hr_images = np.resize(test_hr_images,(test_hr_images.shape[0],28,28,1))
-  test_lr_images = np.resize(test_lr_images,(test_lr_images.shape[0],7,7,1))
+  test_hr_images = np.resize(test_hr_images,(test_hr_images.shape[0],32,32,3))
+  test_lr_images = np.resize(test_lr_images,(test_lr_images.shape[0],8,8,3))
+  test_hr_images = test_hr_images/255.
+
   test_hr_images = test_hr_images.astype(float)
   test_lr_images = test_lr_images.astype(float)
+
+  permutation = np.random.permutation(test_hr_images.shape[0])
+  test_hr_images = test_hr_images[permutation, :, :, :]
+  test_lr_images = test_lr_images[permutation, :, :, :]
 
   # predict test
   c_logits = net.conditioning_logits
   lr_imgs = test_lr_images[0:32]
   hr_imgs = test_hr_images[0:32]
   #np_hr_imgs, np_lr_imgs = sess.run([hr_imgs_tf, lr_imgs_tf])
-  gen_hr_imgs = np.zeros((batch_size, 28, 28, 1), dtype=np.float32)
+  gen_hr_imgs = np.zeros((batch_size, 32, 32, 3), dtype=np.float32)
   #gen_hr_imgs = np_hr_imgs
   #gen_hr_imgs[:,16:,16:,:] = 0.0
   np_c_logits = sess.run(c_logits, feed_dict={xs: hr_imgs, ys: lr_imgs, net.train:False})
-  for i in range(28):
-    for j in range(28):
-      for c in range(1):
-        new_pixel = logits_2_pixel_value(np_c_logits[:, i, j, c*256:(c+1)*256], mu=mu)
-        gen_hr_imgs[:, i, j, c] = new_pixel
+  for i in range(32):
+      for j in range(32):
+        for c in range(3):
+          new_pixel = logits_2_pixel_value(np_c_logits[:, i, j, c*256:(c+1)*256], mu=mu)
+          gen_hr_imgs[:, i, j, c] = new_pixel
 
+  hr_imgs = hr_imgs*255.
+  lr_imgs = lr_imgs*255.
+  gen_hr_imgs = gen_hr_imgs*255.
   # output all
   plt.subplot(1, 3, 1)
   show_samples(hr_imgs)
@@ -380,17 +395,17 @@ if __name__ == '__main__':
   show_samples(gen_hr_imgs)
 
   # output single
-  index = 7
+  index = 2
   hr_imgg = gen_hr_imgs[index]
   lr_imgt = test_lr_images[index]
   hr_imgt = test_hr_images[index]
-  hr_imgg = np.resize(hr_imgg,(28,28))
-  hr_imgt = np.resize(hr_imgt,(28,28))
-  lr_imgt = np.resize(lr_imgt,(7,7))
+  hr_imgg = np.resize(hr_imgg,(32,32,3))
+  hr_imgt = np.resize(hr_imgt,(32,32,3))
+  lr_imgt = np.resize(lr_imgt,(8,8,3))
 
   plt.subplot(1, 3, 1)
-  plt.imshow(hr_imgt,plt.cm.gray)
+  plt.imshow(hr_imgt)
   plt.subplot(1, 3, 2)
-  plt.imshow(lr_imgt,plt.cm.gray)
+  plt.imshow(lr_imgt)
   plt.subplot(1, 3, 3)
-  plt.imshow(hr_imgg,plt.cm.gray)
+  plt.imshow(hr_imgg)
