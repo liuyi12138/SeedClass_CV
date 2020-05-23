@@ -1,0 +1,64 @@
+\newpage
+\section{计算机学报的模板}
+对投稿的基本要求：
+
+\begin{theorem}
+  定理内容。
+  “定义”、“假设”、“公理”、“引理”等的排版格式与此相同，详细定理证明、公式可放在附录中。
+\end{theorem}
+
+\begin{proof}
+  证明过程.
+\end{proof}
+
+
+\begin{table}[htb]
+  \centering
+  \caption{表说明}
+  \small
+  \begin{tabular}{cc}
+    \toprule
+    示例表格 & 第一行为表头，表头要有内容 \\
+    \midrule
+    & \\
+    \midrule
+    & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{procedure}
+  \caption{过程名称}
+  \small
+  \begin{algorithmic}
+    \REQUIRE
+    \ENSURE
+    \STATE \COMMENT{《计算机学报》的方法过程描述字体为小5号宋体，IF 、THEN等伪代码关键词全部用大写字母，变量和函数名称用斜体}
+  \end{algorithmic}
+\end{procedure}
+
+\begin{algorithm}
+  \caption{算法名称}
+  \small
+  \begin{algorithmic}
+    \REQUIRE $n \geq 0 \vee x \neq 0$
+    \ENSURE $y = x^n$
+    \STATE $y \leftarrow 1$
+    \IF{$n < 0$}
+      \STATE $X \leftarrow 1 / x$
+      \STATE $N \leftarrow -n$
+    \ELSE
+      \STATE $X \leftarrow x$
+      \STATE $N \leftarrow n$
+    \ENDIF
+    \WHILE{$N \neq 0$}
+      \IF{$N$ is even}
+        \STATE $X \leftarrow X \times X$
+        \STATE $N \leftarrow N / 2$
+      \ELSE[$N$ is odd]
+        \STATE $y \leftarrow y \times X$
+        \STATE $N \leftarrow N - 1$
+      \ENDIF
+    \ENDWHILE
+  \end{algorithmic}
+\end{algorithm}

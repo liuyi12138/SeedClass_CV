@@ -1,0 +1,147 @@
+% !TeX encoding = UTF-8
+% !TeX program = xelatex
+% !TeX spellcheck = en_US
+
+\documentclass{cjc}
+
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{siunitx}
+
+\classsetup{
+  % 配置里面不要出现空行
+  title        = {基于Conditional Gated PixelCNN的图像超分辨率重建},
+  title*       = {Image Super Resolution Reconstruction based on Conditional Gated PixelCNN},
+  authors      = {
+    author1 = {
+      name         = {刘羿},
+      name*        = {Yi Liu},
+      affiliations = {aff1},
+      biography    = {种子1701班，U201713371，主要研究领域为网络安全},
+      % 英文作者介绍内容包括：出生年, 学位(或目前学历), 职称, 主要研究领域(与中文作者介绍中的研究方向一致).
+      biography*   = {SeedClass 1701， U201713371，His research interests lie within Cyber security},
+      email        = {liuyi12138@hust.edu.cn},
+      phone-number = {18627746983},  % 第1作者手机号码(投稿时必须提供，以便紧急联系，发表时会删除)
+    },
+    author2 = {
+      name         = {张志宇},
+      name*        = {Zhiyu Zhang},
+      affiliations = {aff1},
+      biography    = {种子1701班，U201710997，，主要研究领域为网络安全、网络通信和机器学习.},
+      biography*   = {SeedClass 1701, U201710997, His research interests lie within Cybersecurity, Network Communications and Machin Learning},
+      email        = {zhiyuzhang@hust.edu.cn},
+    },
+    author3 = {
+      name         = {李勉},
+      name*        = {Mian Li},
+      affiliations = {aff1},
+      biography    = {种子1701班，U201712070，主要研究领域为网络安全.},
+      biography*   = {SeedClass 1701, U201712070, His research interests lie within Cybersecurity},
+      email        = {1350747952@qq.com},
+      % 通讯作者
+    %   corresponding = true,
+    },
+  },
+  % 论文定稿后，作者署名、单位无特殊情况不能变更。若变更，须提交签章申请，
+  % 国家名为中国可以不写，省会城市不写省的名称，其他国家必须写国家名。
+  affiliations = {
+    aff1 = {
+      name  = {华中科技大学\ 电子信息与通信学院, 武汉市， 中国\ 430074},
+      name* = {Department of Electronic Information and Communications, Huazhong University of Science and Technology, 430074, China},
+    },
+  },
+  abstract     = {
+    % 中文摘要内容置于此处(英文摘要中要有这些内容)，字体为小5号宋体。
+    % 摘要贡献部分，要有数据支持，不要出现“...大大提高”、“...显著改善”等描述，
+    % 正确的描述是“比…提高 X\%”、 “在…上改善 X\%”。
+    图像的超分辨率重建是人为地通过数字图像处理等方法将低分辨率的图像重建为高分辨率图像的过程。基于传统图像插值的重建方法难以构建输入输出的非线性依赖关系，而基于生成对抗网络的方法难以克服模式崩溃和数据多样性缺乏的问题，因此我们提出了基于条件的门限PixelCNN网络，它能够以递归的形式将图像的先验信息以条件的形式来限制CNN预测网络，从而达到很好的超分辨率重建效果。本文以亚洲人脸为重点实验对象，最终实现将16x16的低分图像较完美的生成64x64的高分图像，并对于非人脸图像具有良好的可迁移性。
+  },
+  abstract*    = {Abstract 
+Image super-resolution reconstruction is a process of artificially reconstructing low-resolution images into high-resolution images through digital image processing methods. The reconstruction based on traditional image interpolation is difficult to construct the non-linear dependence of input and output, and the method based on generating adversarial network is difficult to overcome the problems of mode collapse and lack of data diversity. Therefore, we propose a Conditional Gated PixelCNN network, which can recursively input the prior information of the image as a condition to limit the CNN prediction network, so as to achieve a great super-resolution reconstruction effect. This paper focuses on Asian faces reconstruction, and finally achieves a perfect rebuilding from 16x16 LR image to 64x64 HR image, which also own a good portability in other types of images. },
+  % 中文关键字与英文关键字对应且一致，应有5-7个关键词，不要用英文缩写
+  keywords     = {图像超分辨率重建, PixelCNN, 先验条件限制},
+  keywords*    = {Image Super-resolution Reconstruction, PixelCNN, Prior Conditional Limit, },
+  grants       = {
+    三位作者为并列第一作者，作者信息如下：
+  },
+  % clc           = {TP393},
+  % doi           = {10.11897/SP.J.1016.2020.00001},  % 投稿时不提供DOI号
+  % received-date = {2019-08-10},  % 收稿日期
+  % revised-date  = {2019-10-19},  % 最终修改稿收到日期，投稿时不填写此项
+  % publish-date  = {2020-03-16},  % 出版日期
+  % page          = 512,
+}
+
+\newcommand\dif{\mathop{}\!\mathrm{d}}
+
+% hyperref 总是在导言区的最后加载
+\usepackage{hyperref}
+
+
+
+\begin{document}
+
+\maketitle
+
+
+\input{introduction}
+
+\input{related_work}
+
+\input{principles}
+
+\input{experiment}
+
+\input{conclusion}
+
+% \input{template}
+
+\begin{acknowledgments}
+  感谢王兴刚老师对本篇论文工作的悉心指导和提出的宝贵建议。
+\end{acknowledgments}
+
+\appendix
+
+\section{人员分工}
+\begin{table}  
+    \begin{center}  
+    \begin{tabular}{|l| m{5cm}|}  
+    \hline  
+        刘羿 & 选题调研、Condtional Network设计与实现、Prior     Network设计与实现、服务器模型训练自动化、开题PPT制作与汇报、结题PPT制作与汇报、最终论文撰写 \\ \hline
+        张志宇 & 选题调研、相关文献调研、论文复现、数据集获取、Prior     Network设计与实现、服务器模型训练自动化、开题PPT制作与汇报、结题PPT制作与汇报、最终论文撰写\\ \hline  
+        李勉 & 选题调研、相关文献调研、论文复现、数据集获取、服务器模型训练自动化、结题PPT制作与汇报、最终论文撰写 \\ 
+    \hline  
+    \end{tabular}  
+    \end{center}
+    \caption{人员分工}  
+\end{table}
+
+\nocite{*}
+\bibliographystyle{cjc}
+\bibliography{ref}
+
+\newpage
+
+\makebiographies
+
+
+% \begin{background}
+% *论文背景介绍为英文，字体为小5号Times New Roman体*
+
+% 论文后面为400单词左右的英文背景介绍。这是我们的介绍：
+
+% 本文研究的问题属于哪一个领域的什么问题。该类问题目前国际上解决到什么程度。
+
+% 本文将问题解决到什么程度。
+
+% 课题所属的项目。
+
+% 项目的意义。
+
+% 本研究群体以往在这个方向上的研究成果。
+
+% 本文的成果是解决大课题中的哪一部分，如果涉及863/973以及其项目、基金、研究计划，注意这些项目的英文名称应书写正确。
+% \end{background}
+
+\end{document}
